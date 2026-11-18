@@ -1,0 +1,56 @@
+# Gradle files
+.gradle/
+build/
+*/build/
+*/build.gradle
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Log/OS files
+*.log
+.DS_Store
+
+# Android Studio files
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Android build outputs
+*.apk
+*.ap_
+*.aab
+*.aar
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google Services (e.g. google-services.json)
+google-services.json
+
+# Firebase
+firebase.json
+firebase-*/
+.firebase/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/**/*.txt
+
+# Kotlin
+*.klib
+
+# Coverage reports
+coverage/
+*.ec
+
+# Misc
+*.orig
+*.bak
+*.swp
+*~
