@@ -85,6 +85,12 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <div class="flow"><span class="chip">Launch app</span><span class="arr">&rarr;</span><span class="chip">Sensor check</span><span class="arr">&rarr;</span><span class="chip ok">Available? Register listener</span><span class="arr">&rarr;</span><span class="chip">Live EMA updates</span><span class="arr">&rarr;</span><span class="chip">Cover sensor &rarr; Record #1</span></div>
 <div class="flow"><span class="chip">Indoor light &rarr; Record #2</span><span class="arr">&rarr;</span><span class="chip">Flashlight &rarr; Record #3</span><span class="arr">&rarr;</span><span class="chip ok">Generate Analysis</span><span class="arr">&rarr;</span><span class="chip">Interpretation report</span></div>
 <div class="flow"><span class="chip bad">Rotate / background</span><span class="arr">&rarr;</span><span class="chip ok">ViewModel + savedInstanceState retain data</span><span class="arr">&rarr;</span><span class="chip">onResume re-registers listener</span></div>
+
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/app-overview.png" alt="App main screen showing all cards expanded" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 1: Main screen with all sections — Sensor Info, Live Reading, Lifecycle Controls, Observation Table, Analysis, and Technical Notes</figcaption>
+</figure>
+
 <h3>Project Structure</h3>
 <div class="tree">app/
 ├─ src/main/java/…/MainActivity.java        ← logic (Sections 4–6)
@@ -128,6 +134,11 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
 </pre></figure>
 
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/header-question.png" alt="Header with title and Experiment Question card" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 2: Header section with app title and Experiment Question card</figcaption>
+</figure>
+
 <h3>3.2 Sensor Information Card</h3>
 <p>Four <code>TextView</code> pairs (label + value) show sensor name, unit, availability status, and data source. Values are populated at runtime in <code>checkSensorAvailability()</code>.</p>
 <figure class="code"><figcaption>activity_main.xml <b>&middot; sensor info</b></figcaption><pre><span class="l"><i class="k"><androidx.cardview.widget.CardView</i> ... <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i>></span>
@@ -165,6 +176,12 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <span class="l">    <i class="k"></LinearLayout></span>
 <span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
 </pre></figure>
+
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/sensor-info.png" alt="Sensor Information card showing sensor name, unit, status, and data source" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 3: Sensor Information card populated with live sensor details</figcaption>
+</figure>
+
 <div class="note tip"><p>&#128161; <b>Tip.</b> Using <code>?attr/colorPrimary</code>, <code>?attr/textSecondaryColor</code>, etc. lets the card automatically adapt to light/dark themes without hard-coded colors.</p></div>
 
 <h3>3.3 Live Reading Card</h3>
@@ -205,6 +222,11 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
 </pre></figure>
 
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/live-reading.png" alt="Live Reading card showing raw value, smoothed EMA value, timestamp, and progress bar" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 4: Live Reading card with active sensor data — raw lux, EMA-smoothed value, timestamp, and progress bar</figcaption>
+</figure>
+
 <h3>3.4 Lifecycle Controls Card</h3>
 <p>Displays current listener state (Registered / Unregistered) and the current Activity lifecycle phase. Two buttons allow manual register/unregister; the app also auto-registers in <code>onResume</code> and auto-unregisters in <code>onPause</code>.</p>
 <figure class="code"><figcaption>activity_main.xml <b>&middot; lifecycle controls</b></figcaption><pre><span class="l"><i class="k"><androidx.cardview.widget.CardView</i> ...></span>
@@ -235,6 +257,11 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <span class="l">    <i class="k"></LinearLayout></span>
 <span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
 </pre></figure>
+
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/lifecycle-controls.png" alt="Lifecycle Controls card showing listener state, lifecycle phase, and register/unregister buttons" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 5: Lifecycle Controls card — listener state, current lifecycle phase, and manual register/unregister buttons</figcaption>
+</figure>
 
 <h3>3.5 Observation Table Card</h3>
 <p>A <code>TableLayout</code> with three fixed rows (Covered, Indoor Light, Flashlight) and four columns (Condition, Raw, Smoothed, Timestamp). Below the table, three colored buttons let the user record each observation.</p>
@@ -291,6 +318,11 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
 </pre></figure>
 
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/observation-table.png" alt="Observation Table with three rows for Covered, Indoor Light, Flashlight and record buttons" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 6: Observation Table — three controlled conditions with Record buttons for Covered, Indoor Light, and Flashlight</figcaption>
+</figure>
+
 <h3>3.6 Analysis & Interpretation Card</h3>
 <p>A <code>TextView</code> (<code>tvAnalysis</code>) holds the generated report. A centered button triggers <code>generateAnalysis()</code>.</p>
 <figure class="code"><figcaption>activity_main.xml <b>&middot; analysis</b></figcaption><pre><span class="l"><i class="k"><androidx.cardview.widget.CardView</i> ...></span>
@@ -314,6 +346,11 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
 </pre></figure>
 
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/analysis-report.png" alt="Generated Analysis report showing three observations with pattern interpretation, confounding factors, sampling, battery, and smoothing details" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 7: Generated Analysis report with all three observations, pattern interpretation, confounding factors, sampling & timing, battery cost, and EMA smoothing trade-offs</figcaption>
+</figure>
+
 <h3>3.7 Technical Notes Card</h3>
 <p>A static reference card summarizing key implementation details for the lab write-up.</p>
 <figure class="code"><figcaption>activity_main.xml <b>&middot; technical notes</b></figcaption><pre><span class="l"><i class="k"><androidx.cardview.widget.CardView</i> ...></span>
@@ -331,6 +368,11 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <span class="l">    <i class="k"></LinearLayout></span>
 <span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
 </pre></figure>
+
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/technical-notes.png" alt="Technical Notes card with implementation details" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 8: Technical Notes card — sampling delay, EMA smoothing, battery, missing sensor handling, lifecycle, and rotation survival</figcaption>
+</figure>
 
 <h3>3.8 Complete Layout File</h3>
 <details><summary>activity_main.xml &middot; complete &mdash; click to expand</summary>
@@ -877,6 +919,12 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <span class="l">    }</span>
 </pre></figure>
 
+
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/sensor-unavailable.png" alt="App showing sensor unavailable state with disabled controls and error message" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 10: Graceful degradation — sensor unavailable state with disabled controls and informative Toast</figcaption>
+</figure>
+
 <h3>4.4 Register / Unregister Listener</h3>
 <p><code>registerListener()</code> uses <code>SENSOR_DELAY_NORMAL</code> (~200 ms). A boolean flag prevents duplicate registration. <code>unregisterListener()</code> cleans up and updates UI. Both update <code>tvListenerState</code> and button enabled states.</p>
 <figure class="code"><figcaption>MainActivity.java <b>&middot; register / unregister</b></figcaption><pre><span class="l">    <i class="k">private</i> <i class="k">void</i> registerListener() {</span>
@@ -992,6 +1040,11 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 </pre></figure>
 <div class="note warn"><p>&#9888;&#65039; <b>Watch out.</b> <code>SensorEventListener</code> callbacks run on a sensor thread, <b>not</b> the main thread. Always wrap UI updates in <code>runOnUiThread()</code> or use <code>Handler</code>/<code>LiveData</code>. The code above guards every view reference with null-checks to survive layout mismatches.</p></div>
 
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/ema-smoothing.png" alt="Live Reading card showing raw value vs EMA smoothed value comparison" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 11: EMA smoothing in action — raw sensor jitter (top) vs smoothed value (bottom) with α=0.3</figcaption>
+</figure>
+
 <h3>4.6 Lifecycle Methods: Visible-Lifecycle Registration</h3>
 <p>The app follows the <b>visible lifecycle</b> pattern: register in <code>onResume</code>, unregister in <code>onPause</code>. This prevents background battery drain and duplicate listeners after rotation. <code>onDestroy</code> adds a final safety cleanup. Each phase logs to <code>tvLifecyclePhase</code> for debugging.</p>
 <figure class="code"><figcaption>MainActivity.java <b>&middot; lifecycle methods</b></figcaption><pre><span class="l">    <i class="c">// ===== Lifecycle =====</i></span>
@@ -1038,6 +1091,11 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <span class="l">        }</span>
 <span class="l">    }</span>
 </pre></figure>
+
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/lifecycle-phases.png" alt="Lifecycle phase indicator showing transitions through onCreate, onStart, onResume, onPause, onStop, onDestroy" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 9: Lifecycle phase indicator updates — visible lifecycle (onResume/onPause) controls listener registration</figcaption>
+</figure>
 
 <h3>4.7 Recording Observations</h3>
 <p>Each <code>Record</code> button calls <code>recordObservation(n)</code> which reads the current raw/smoothed values from the UI, timestamps them, and stores them in the corresponding <code>Observation</code> object. The table row is updated immediately.</p>
@@ -1171,6 +1229,12 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <span class="l">    }</span>
 </pre></figure>
 
+
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/generated-analysis.png" alt="Generated analysis report in the app showing all three observations with interpretation" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 12: Generated Analysis report displayed in the app — pattern interpretation, confounding factors, sampling, battery, and smoothing details</figcaption>
+</figure>
+
 <h3>4.9 State Persistence: onSaveInstanceState & restoreState</h3>
 <p>Saves <code>hasFirstReading</code>, <code>smoothedValue</code>, and all three observations into the Bundle. On restore, re-populates the UI and observation objects. The ViewModel additionally retains the latest raw/smoothed values across configuration changes.</p>
 <figure class="code"><figcaption>MainActivity.java <b>&middot; onSaveInstanceState / restoreState</b></figcaption><pre><span class="l">    <i class="a">@Override</i></span>
@@ -1260,6 +1324,11 @@ ul,ol{max-width:72ch}li{margin:.25em 0}
 <tr><td><b>Battery Best Practice</b></td><td>Unregister when not visible; NORMAL rate ~1&ndash;3%/hr</td></tr>
 <tr><td><b>Thread Safety</b></td><td>All UI updates wrapped in <code>runOnUiThread()</code>; null guards on every view access</td></tr>
 </table>
+
+<figure style="text-align:center;margin:24px 0">
+  <img src="screenshots/key-concepts-summary.png" alt="Visual summary of key concepts: sensor type, sampling rate, EMA smoothing, lifecycle policy, rotation survival, missing sensor handling, accuracy, battery, thread safety" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid var(--line)">
+  <figcaption style="margin-top:8px;color:var(--mute);font-size:.9rem">Figure 13: Key concepts visual summary — sensor configuration, lifecycle management, smoothing, and persistence strategy</figcaption>
+</figure>
 
 <h2>6 &middot; Complete Activity File</h2>
 <details><summary>MainActivity.java &middot; complete &mdash; click to expand</summary>
