@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Sensor Readings — Lifecycle & Interpretation (Lab 06)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f8f7;--card:#fff;--ink:#1c2b29;--mute:#586967;--line:#cddad8;--acc:#0f766e;--accbg:#e3f2ef;--warn:#fff4dc;--warnl:#e0b252;--tip:#e8f1fb;--tipl:#7aa7d9;--code:#142120}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:40px 20px 80px}
+h1{font-size:2rem;line-height:1.2;margin:.2em 0 .1em}
+h2{font-size:1.5rem;margin:2.4em 0 .6em;padding-bottom:.35em;border-bottom:2px solid var(--line)}
+h3{font-size:1.1rem;margin:1.8em 0 .4em}
+p{margin:.6em 0;max-width:72ch}
+.kicker{color:var(--acc);font-weight:600;font-size:.9rem}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin:16px 0 0;color:var(--mute);font-size:.92rem}
+.meta b{color:var(--ink);font-weight:600}
+.fill{border-bottom:1.5px dashed var(--acc);padding:0 4px;min-width:5em;display:inline-block;color:var(--acc)}
+.fill:focus{outline:2px solid var(--acc);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:16px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card b{display:block;margin-bottom:2px}.card span{color:var(--mute);font-size:.92rem}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:.92rem;margin:14px 0}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--accbg);font-weight:600}tr:last-child td{border-bottom:0}
+td code,p code,li code{background:var(--accbg);padding:1px 5px;border-radius:5px;font-size:.88em}
+.res{cursor:pointer;text-align:center;width:64px;font-size:1.1rem;user-select:none}
+.ed{min-width:9em;color:var(--acc)}
+.note{border-left:4px solid;border-radius:8px;padding:10px 14px;margin:16px 0}
+.note.warn{background:var(--warn);border-color:var(--warnl)}.note.tip{background:var(--tip);border-color:var(--tipl)}
+.note.draft{background:var(--card);border:1px dashed var(--warnl);border-left:4px solid var(--warnl)}
+.note p{margin:.3em 0}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.9rem}
+.chip.ok{background:var(--accbg);border-color:var(--acc)}.chip.bad{background:var(--warn);border-color:var(--warnl)}
+.arr{color:var(--mute)}
+.code{margin:14px 0;border-radius:12px;overflow:hidden;background:var(--code);color:#dbe8e6}
+.code figcaption{padding:8px 14px;font:500 .8rem ui-monospace,Menlo,Consolas,monospace;background:#0b1514;color:#9fb8b4}
+.code figcaption b{color:#6fd3c4;font-weight:500}
+.code pre{margin:0;padding:12px 0;overflow-x:auto;font:400 .82rem/1.55 ui-monospace,Menlo,Consolas,monospace;counter-reset:n}
+.l::before{counter-increment:n;content:counter(n);display:inline-block;width:2.4em;margin-right:1.1em;text-align:right;color:#5f7a77;user-select:none}
+.code i{font-style:normal}.c{color:#7f9a97;font-style:italic!important}.s{color:#e6c07b}.k{color:#7fd1c3}.a{color:#e5a3c5}.t{color:#8ab4f8}.n{color:#f0a77a}
+details{margin:14px 0;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+summary{cursor:pointer;padding:10px 14px;font-weight:600;color:var(--acc)}details .code{margin:0;border-radius:0 0 12px 12px}
+.tree{font:.85rem/1.6 ui-monospace,Menlo,Consolas,monospace;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;white-space:pre;overflow-x:auto}
+.step{display:grid;grid-template-columns:44px 1fr;gap:4px 14px;margin:26px 0}
+.step .no{width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-weight:700;color:var(--mute)}
+.step h3{margin:6px 0 0}.step p,.step .phone{grid-column:2}
+.phone{display:grid;place-items:center;width:210px;height:420px;border:8px solid #2a2f33;border-radius:28px;background:var(--card);color:var(--mute);font-size:.85rem;text-align:center;padding:12px;cursor:pointer;overflow:hidden}
+.phone.over{outline:3px dashed var(--acc)}.phone input{display:none}.phone img{width:100%;height:100%;object-fit:contain}
+ul,ol{max-width:72ch}li{margin:.25em 0}
+@media print{@page{size:A4;margin:14mm}body{background:#fff;color:#000;font-size:11pt}main{padding:0;max-width:none}
+.hint{display:none}.code pre{white-space:pre-wrap;overflow:visible}.code,.card,.note,table,.step{break-inside:avoid}h2{break-after:avoid}}
+.phone{width:254px;height:466px;border:2px solid var(--line);border-radius:28px;padding:0;background:#161216}
+.phone img{object-fit:cover}.card .ic{font-size:1.4rem;display:block}
+.who{display:flex;flex-wrap:wrap;gap:8px 20px;color:var(--mute);margin:14px 0 0;font-size:.95rem}
+.sub{color:var(--mute);margin:.2em 0 0}
+@media print{.step{break-inside:avoid}.phone{border-color:#999}}
+</style></head><body><main>
+<p class="kicker">MOBILE APPLICATION DEVELOPMENT &bull; LAB WORK</p>
+<h1>Live Sensor Readings — Lifecycle & Interpretation</h1>
+<p class="sub">An Android (Java) walkthrough: capturing live light-sensor data, managing the sensor listener through the Activity lifecycle, smoothing readings with EMA, and interpreting three controlled observations.</p>
+<div class="who"><span>&#128100; <b>Patrick Kilonzo Mbithi</b></span><span>&#127380; SCT211-0036/2024</span><span>&#127891; BSc Computer Science</span><span>&#128104;&#8205;&#127979; Dr. Lawrence Nderu</span></div>
+
+<h2>1 &middot; Lab Objective</h2>
+<p>The goal of this lab is to build an interactive Android screen that acquires live data from the device&rsquo;s light sensor (<code>Sensor.TYPE_LIGHT</code>), manages the listener registration across the Activity lifecycle, applies exponential moving average (EMA) smoothing, records three controlled observations (covered, indoor light, flashlight), and generates a written analysis of the results. By the end of this lab the app can:</p>
+<div class="grid">
+<div class="card"><span class="ic">&#128306;</span><b>Detect sensor</b><span>Checks for <code>TYPE_LIGHT</code> availability; disables controls gracefully when missing.</span></div>
+<div class="card"><span class="ic">&#9889;&#65039;</span><b>Lifecycle-aware listener</b><span>Registers in <code>onResume</code>, unregisters in <code>onPause</code> to avoid background battery drain.</span></div>
+<div class="card"><span class="ic">&#128200;</span><b>Live EMA smoothing</b><span>Applies <code>S<sub>t</sub> = &alpha;&middot;raw<sub>t</sub> + (1-&alpha;)&middot;S<sub>t-1</sub></code> with &alpha;=0.3 to suppress jitter.</span></div>
+<div class="card"><span class="ic">&#128221;</span><b>Record observations</b><span>Three buttons capture raw + smoothed values with timestamps for later analysis.</span></div>
+<div class="card"><span class="ic">&#128161;</span><b>Generate interpretation</b><span>Produces a structured report covering pattern, confounding factors, sampling, battery, and smoothing trade-offs.</span></div>
+</div>
+<table><tr><th>Component</th><th>Purpose in this app</th></tr>
+<tr><td><code>SensorManager</code> + <code>Sensor.TYPE_LIGHT</code></td><td>System service to access the ambient light sensor; returns illuminance in lux</td></tr>
+<tr><td><code>SensorEventListener</code></td><td>Callback interface: <code>onSensorChanged</code> (new reading) + <code>onAccuracyChanged</code></td></tr>
+<tr><td><code>registerListener / unregisterListener</code></td><td>Starts/stops delivery of sensor events at a chosen rate (<code>SENSOR_DELAY_NORMAL</code>)</td></tr>
+<tr><td><code>ViewModel</code></td><td>Retains last raw/smoothed values and <code>hasFirstReading</code> flag across configuration changes</td></tr>
+<tr><td><code>onSaveInstanceState / restoreState</code></td><td>Persists observations and smoothed value across process death/recreation</td></tr>
+<tr><td><code>ProgressBar (horizontal)</code></td><td>Visualizes raw lux up to 10,000 lux</td></tr>
+<tr><td><code>TableLayout</code></td><td>Displays the three controlled-condition rows (Condition, Raw, Smoothed, Timestamp)</td></tr>
+</table>
+
+<h2>2 &middot; How the App Works</h2>
+<p>The user journey is a single screen with a clear sequence: verify sensor &rarr; start listener &rarr; watch live values &rarr; record three conditions &rarr; generate analysis.</p>
+<div class="flow"><span class="chip">Launch app</span><span class="arr">&rarr;</span><span class="chip">Sensor check</span><span class="arr">&rarr;</span><span class="chip ok">Available? Register listener</span><span class="arr">&rarr;</span><span class="chip">Live EMA updates</span><span class="arr">&rarr;</span><span class="chip">Cover sensor &rarr; Record #1</span></div>
+<div class="flow"><span class="chip">Indoor light &rarr; Record #2</span><span class="arr">&rarr;</span><span class="chip">Flashlight &rarr; Record #3</span><span class="arr">&rarr;</span><span class="chip ok">Generate Analysis</span><span class="arr">&rarr;</span><span class="chip">Interpretation report</span></div>
+<div class="flow"><span class="chip bad">Rotate / background</span><span class="arr">&rarr;</span><span class="chip ok">ViewModel + savedInstanceState retain data</span><span class="arr">&rarr;</span><span class="chip">onResume re-registers listener</span></div>
+<h3>Project Structure</h3>
+<div class="tree">app/
+├─ src/main/java/…/MainActivity.java        ← logic (Sections 4–6)
+├─ src/main/res/layout/activity_main.xml    ← UI (Section 3)
+├─ src/main/res/values/themes.xml           ← MaterialComponents theme
+└─ src/main/res/values/colors.xml           ← custom color attrs (optional)</div>
+<div class="note warn"><p>&#9888;&#65039; <b>Watch out.</b> The app theme <b>must</b> inherit from <code>Theme.MaterialComponents</code> (e.g., <code>Theme.MaterialComponents.DayNight.DarkActionBar</code>) for <code>CardView</code>, <code>TextInputLayout</code>, and <code>?attr/colorPrimary</code> to resolve. A plain AppCompat theme will crash on inflation.</p></div>
+
+<h2>3 &middot; User Interface (activity_main.xml)</h2>
+<p>The whole form sits inside a <code>ScrollView</code> &rarr; <code>LinearLayout</code> so the on-screen keyboard never hides content. Each card is a self-contained section explained below, then the complete file is shown at the end of the section.</p>
+
+<h3>3.1 Header & Experiment Question</h3>
+<p>A title, subtitle, and a <code>CardView</code> containing the experiment question give context before any data appears.</p>
+<figure class="code"><figcaption>activity_main.xml <b>&middot; header & question</b></figcaption><pre><span class="l"><i class="c"><!-- Header --></i></span>
+<span class="l"><i class="k"><TextView</i></span>
+<span class="l">    <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">    <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">    <i class="a">android:text</i>=<i class="s">"Live Sensor Readings — Lifecycle & Interpretation"</i></span>
+<span class="l">    <i class="a">android:textSize</i>=<i class="s">"22sp"</i></span>
+<span class="l">    <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">    <i class="a">android:textColor</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">    <i class="a">android:gravity</i>=<i class="s">"center"</i></span>
+<span class="l">    <i class="a">android:layout_marginBottom</i>=<i class="s">"8dp"</i> /></span>
+<span class="l"></span>
+<span class="l"><i class="c"><!-- Experiment Question Card --></i></span>
+<span class="l"><i class="k"><androidx.cardview.widget.CardView</i></span>
+<span class="l">    <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">    <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">    <i class="a">app:cardElevation</i>=<i class="s">"4dp"</i></span>
+<span class="l">    <i class="a">app:cardCornerRadius</i>=<i class="s">"8dp"</i></span>
+<span class="l">    <i class="a">app:cardBackgroundColor</i>=<i class="s">"?attr/surfaceCardColor"</i></span>
+<span class="l">    <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i>></span>
+<span class="l"></span>
+<span class="l">    <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i> ... ></span>
+<span class="l">        <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Experiment Question"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l">        <i class="k"><TextView</i></span>
+<span class="l">            <i class="a">android:id</i>=<i class="s">"@+id/tvExperimentQuestion"</i></span>
+<span class="l">            <i class="a">android:text</i>=<i class="s">"How does ambient light intensity (lux) change across three controlled conditions: (1) sensor covered, (2) normal indoor lighting, (3) direct flashlight exposure?"</i></span>
+<span class="l">            <i class="a">android:lineSpacingMultiplier</i>=<i class="s">"1.3"</i> ... /></span>
+<span class="l">    <i class="k"></LinearLayout></span>
+<span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
+</pre></figure>
+
+<h3>3.2 Sensor Information Card</h3>
+<p>Four <code>TextView</code> pairs (label + value) show sensor name, unit, availability status, and data source. Values are populated at runtime in <code>checkSensorAvailability()</code>.</p>
+<figure class="code"><figcaption>activity_main.xml <b>&middot; sensor info</b></figcaption><pre><span class="l"><i class="k"><androidx.cardview.widget.CardView</i> ... <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i>></span>
+<span class="l">    <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">        <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Sensor Information"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Row: Sensor --></i></span>
+<span class="l">        <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"8dp"</i>></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_weight</i>=<i class="s">"1"</i></span>
+<span class="l">                <i class="a">android:text</i>=<i class="s">"Sensor:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l">            <i class="k"><TextView</i></span>
+<span class="l">                <i class="a">android:id</i>=<i class="s">"@+id/tvSensorName"</i></span>
+<span class="l">                <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_weight</i>=<i class="s">"1"</i></span>
+<span class="l">                <i class="a">android:gravity</i>=<i class="s">"end"</i></span>
+<span class="l">                <i class="a">android:text</i>=<i class="s">"Light Sensor (TYPE_LIGHT)"</i> ... /></span>
+<span class="l">        <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Row: Unit --></i></span>
+<span class="l">        <i class="k"><LinearLayout</i> ...></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Unit:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvSensorUnit"</i> <i class="a">android:text</i>=<i class="s">"lux"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> ... /></span>
+<span class="l">        <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Row: Status --></i></span>
+<span class="l">        <i class="k"><LinearLayout</i> ...></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Status:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvSensorStatus"</i> <i class="a">android:text</i>=<i class="s">"Checking..."</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> ... /></span>
+<span class="l">        <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Row: Data Source --></i></span>
+<span class="l">        <i class="k"><LinearLayout</i> ...></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Data Source:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvDataSource"</i> <i class="a">android:text</i>=<i class="s">"Measured"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> ... /></span>
+<span class="l">        <i class="k"></LinearLayout></span>
+<span class="l">    <i class="k"></LinearLayout></span>
+<span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
+</pre></figure>
+<div class="note tip"><p>&#128161; <b>Tip.</b> Using <code>?attr/colorPrimary</code>, <code>?attr/textSecondaryColor</code>, etc. lets the card automatically adapt to light/dark themes without hard-coded colors.</p></div>
+
+<h3>3.3 Live Reading Card</h3>
+<p>Shows raw lux, EMA-smoothed lux, timestamp, and a horizontal <code>ProgressBar</code> (max 10,000 lux). All values are updated on the UI thread from <code>onSensorChanged</code>.</p>
+<figure class="code"><figcaption>activity_main.xml <b>&middot; live reading</b></figcaption><pre><span class="l"><i class="k"><androidx.cardview.widget.CardView</i> ...></span>
+<span class="l">    <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">        <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Live Reading"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Raw Value --></i></span>
+<span class="l">        <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i>></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Raw Value:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvRawValue"</i> <i class="a">android:text</i>=<i class="s">"— lux"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> ... /></span>
+<span class="l">        <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Smoothed (EMA) --></i></span>
+<span class="l">        <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i>></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Smoothed (EMA &alpha;=0.3):"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvSmoothedValue"</i> <i class="a">android:text</i>=<i class="s">"— lux"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/colorPrimary"</i> ... /></span>
+<span class="l">        <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Timestamp --></i></span>
+<span class="l">        <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i>></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Timestamp:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvTimestamp"</i> <i class="a">android:text</i>=<i class="s">"—"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> ... /></span>
+<span class="l">        <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Progress bar (0–10,000 lux) --></i></span>
+<span class="l">        <i class="k"><ProgressBar</i></span>
+<span class="l">            <i class="a">android:id</i>=<i class="s">"@+id/progressLight"</i></span>
+<span class="l">            <i class="a">style</i>=<i class="s">"@android:style/Widget.ProgressBar.Horizontal"</i></span>
+<span class="l">            <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">            <i class="a">android:layout_height</i>=<i class="s">"12dp"</i></span>
+<span class="l">            <i class="a">android:max</i>=<i class="s">"10000"</i></span>
+<span class="l">            <i class="a">android:progress</i>=<i class="s">"0"</i></span>
+<span class="l">            <i class="a">android:progressTint</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">            <i class="a">android:progressBackgroundTint</i>=<i class="s">"?attr/colorSurfaceVariant"</i> /></span>
+<span class="l">    <i class="k"></LinearLayout></span>
+<span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
+</pre></figure>
+
+<h3>3.4 Lifecycle Controls Card</h3>
+<p>Displays current listener state (Registered / Unregistered) and the current Activity lifecycle phase. Two buttons allow manual register/unregister; the app also auto-registers in <code>onResume</code> and auto-unregisters in <code>onPause</code>.</p>
+<figure class="code"><figcaption>activity_main.xml <b>&middot; lifecycle controls</b></figcaption><pre><span class="l"><i class="k"><androidx.cardview.widget.CardView</i> ...></span>
+<span class="l">    <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">        <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Lifecycle Controls"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Listener State --></i></span>
+<span class="l">        <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"8dp"</i>></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Listener State:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvListenerState"</i> <i class="a">android:text</i>=<i class="s">"Unregistered"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> ... /></span>
+<span class="l">        <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Lifecycle Phase --></i></span>
+<span class="l">        <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i>></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Lifecycle Phase:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l">            <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvLifecyclePhase"</i> <i class="a">android:text</i>=<i class="s">"onCreate"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> ... /></span>
+<span class="l">        <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Buttons --></i></span>
+<span class="l">        <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:layout_marginTop</i>=<i class="s">"8dp"</i>></span>
+<span class="l">            <i class="k"><Button</i> <i class="a">android:id</i>=<i class="s">"@+id/btnRegister"</i> <i class="a">android:layout_weight</i>=<i class="s">"1"</i></span>
+<span class="l">                <i class="a">android:text</i>=<i class="s">"Register Listener"</i></span>
+<span class="l">                <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorPrimary"</i> ... /></span>
+<span class="l">            <i class="k"><Button</i> <i class="a">android:id</i>=<i class="s">"@+id/btnUnregister"</i> <i class="a">android:layout_weight</i>=<i class="s">"1"</i></span>
+<span class="l">                <i class="a">android:text</i>=<i class="s">"Unregister Listener"</i></span>
+<span class="l">                <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorSurfaceVariant"</i> ... /></span>
+<span class="l">        <i class="k"></LinearLayout></span>
+<span class="l">    <i class="k"></LinearLayout></span>
+<span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
+</pre></figure>
+
+<h3>3.5 Observation Table Card</h3>
+<p>A <code>TableLayout</code> with three fixed rows (Covered, Indoor Light, Flashlight) and four columns (Condition, Raw, Smoothed, Timestamp). Below the table, three colored buttons let the user record each observation.</p>
+<figure class="code"><figcaption>activity_main.xml <b>&middot; observation table</b></figcaption><pre><span class="l"><i class="k"><androidx.cardview.widget.CardView</i> ...></span>
+<span class="l">    <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">        <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Observation Table (3 Controlled Conditions)"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l"></span>
+<span class="l">        <i class="k"><TableLayout</i> <i class="a">android:id</i>=<i class="s">"@+id/tableObservations"</i></span>
+<span class="l">            <i class="a">android:stretchColumns</i>=<i class="s">"*"</i> <i class="a">android:shrinkColumns</i>=<i class="s">"*"</i>></span>
+<span class="l"></span>
+<span class="l">            <i class="c"><!-- Header Row --></i></span>
+<span class="l">            <i class="k"><TableRow</i> <i class="a">android:background</i>=<i class="s">"?attr/colorSurfaceVariant"</i>></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Condition"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Raw (lux)"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Smoothed (lux)"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Timestamp"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">            <i class="k"></TableRow></span>
+<span class="l"></span>
+<span class="l">            <i class="c"><!-- Row 1: Covered --></i></span>
+<span class="l">            <i class="k"><TableRow></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"1. Covered"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs1Raw"</i> <i class="a">android:text</i>=<i class="s">"—"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs1Smooth"</i> <i class="a">android:text</i>=<i class="s">"—"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs1Time"</i> <i class="a">android:text</i>=<i class="s">"—"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">            <i class="k"></TableRow></span>
+<span class="l"></span>
+<span class="l">            <i class="c"><!-- Row 2: Indoor Light (alt bg) --></i></span>
+<span class="l">            <i class="k"><TableRow</i> <i class="a">android:background</i>=<i class="s">"?attr/colorSurfaceVariant"</i>></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"2. Indoor Light"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs2Raw"</i> <i class="a">android:text</i>=<i class="s">"—"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs2Smooth"</i> <i class="a">android:text</i>=<i class="s">"—"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs2Time"</i> <i class="a">android:text</i>=<i class="s">"—"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">            <i class="k"></TableRow></span>
+<span class="l"></span>
+<span class="l">            <i class="c"><!-- Row 3: Flashlight --></i></span>
+<span class="l">            <i class="k"><TableRow></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"3. Flashlight"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs3Raw"</i> <i class="a">android:text</i>=<i class="s">"—"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs3Smooth"</i> <i class="a">android:text</i>=<i class="s">"—"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs3Time"</i> <i class="a">android:text</i>=<i class="s">"—"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:padding</i>=<i class="s">"8dp"</i> ... /></span>
+<span class="l">            <i class="k"></TableRow></span>
+<span class="l">        <i class="k"></TableLayout></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Record Buttons --></i></span>
+<span class="l">        <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:layout_marginTop</i>=<i class="s">"12dp"</i>></span>
+<span class="l">            <i class="k"><Button</i> <i class="a">android:id</i>=<i class="s">"@+id/btnRecordObs1"</i> <i class="a">android:layout_weight</i>=<i class="s">"1"</i></span>
+<span class="l">                <i class="a">android:text</i>=<i class="s">"Record Covered"</i> <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorSecondary"</i> ... /></span>
+<span class="l">            <i class="k"><Button</i> <i class="a">android:id</i>=<i class="s">"@+id/btnRecordObs2"</i> <i class="a">android:layout_weight</i>=<i class="s">"1"</i></span>
+<span class="l">                <i class="a">android:text</i>=<i class="s">"Record Indoor"</i> <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorPrimary"</i> ... /></span>
+<span class="l">            <i class="k"><Button</i> <i class="a">android:id</i>=<i class="s">"@+id/btnRecordObs3"</i> <i class="a">android:layout_weight</i>=<i class="s">"1"</i></span>
+<span class="l">                <i class="a">android:text</i>=<i class="s">"Record Flashlight"</i> <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorTertiary"</i> ... /></span>
+<span class="l">        <i class="k"></LinearLayout></span>
+<span class="l">    <i class="k"></LinearLayout></span>
+<span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
+</pre></figure>
+
+<h3>3.6 Analysis & Interpretation Card</h3>
+<p>A <code>TextView</code> (<code>tvAnalysis</code>) holds the generated report. A centered button triggers <code>generateAnalysis()</code>.</p>
+<figure class="code"><figcaption>activity_main.xml <b>&middot; analysis</b></figcaption><pre><span class="l"><i class="k"><androidx.cardview.widget.CardView</i> ...></span>
+<span class="l">    <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">        <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Analysis & Interpretation"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l"></span>
+<span class="l">        <i class="k"><TextView</i></span>
+<span class="l">            <i class="a">android:id</i>=<i class="s">"@+id/tvAnalysis"</i></span>
+<span class="l">            <i class="a">android:text</i>=<i class="s">"Run the experiment to populate observations, then tap 'Generate Analysis' for interpretation."</i></span>
+<span class="l">            <i class="a">android:lineSpacingMultiplier</i>=<i class="s">"1.4"</i> ... /></span>
+<span class="l"></span>
+<span class="l">        <i class="k"><Button</i></span>
+<span class="l">            <i class="a">android:id</i>=<i class="s">"@+id/btnGenerateAnalysis"</i></span>
+<span class="l">            <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">            <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">            <i class="a">android:layout_gravity</i>=<i class="s">"center"</i></span>
+<span class="l">            <i class="a">android:layout_marginTop</i>=<i class="s">"12dp"</i></span>
+<span class="l">            <i class="a">android:text</i>=<i class="s">"Generate Analysis"</i></span>
+<span class="l">            <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorPrimary"</i> ... /></span>
+<span class="l">    <i class="k"></LinearLayout></span>
+<span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
+</pre></figure>
+
+<h3>3.7 Technical Notes Card</h3>
+<p>A static reference card summarizing key implementation details for the lab write-up.</p>
+<figure class="code"><figcaption>activity_main.xml <b>&middot; technical notes</b></figcaption><pre><span class="l"><i class="k"><androidx.cardview.widget.CardView</i> ...></span>
+<span class="l">    <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">        <i class="k"><TextView</i> <i class="a">android:text</i>=<i class="s">"Technical Notes"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i> ... /></span>
+<span class="l">        <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvTechnicalNotes"</i></span>
+<span class="l">            <i class="a">android:text</i>=<i class="s">"&#8226; Sampling delay requested: SENSOR_DELAY_NORMAL (~200ms, but not guaranteed)</i></span>
+<span class="l"><i class="s">&#8226; Smoothing: Exponential Moving Average (EMA) with &alpha;=0.3</i></span>
+<span class="l"><i class="s">&#8226; Battery: Continuous listening at NORMAL rate ~1-3% per hour</i></span>
+<span class="l"><i class="s">&#8226; Missing sensor: App shows 'Unavailable' and disables controls</i></span>
+<span class="l"><i class="s">&#8226; Background: Listener unregistered in onPause, re-registered in onResume</i></span>
+<span class="l"><i class="s">&#8226; Rotation: Values retained via ViewModel / savedInstanceState"</i></span>
+<span class="l">            <i class="a">android:textSize</i>=<i class="s">"12sp"</i></span>
+<span class="l">            <i class="a">android:lineSpacingMultiplier</i>=<i class="s">"1.5"</i> ... /></span>
+<span class="l">    <i class="k"></LinearLayout></span>
+<span class="l"><i class="k"></androidx.cardview.widget.CardView></span>
+</pre></figure>
+
+<h3>3.8 Complete Layout File</h3>
+<details><summary>activity_main.xml &middot; complete &mdash; click to expand</summary>
+<figure class="code"><figcaption>activity_main.xml <b>&middot; complete</b></figcaption><pre><span class="l"><i class="k"><?xml version</i>=<i class="s">"1.0"</i> <i class="a">encoding</i>=<i class="s">"utf-8"</i>?></span>
+<span class="l"><i class="k"><ScrollView</i> <i class="a">xmlns:android</i>=<i class="s">"http://schemas.android.com/apk/res/android"</i></span>
+<span class="l">    <i class="a">xmlns:app</i>=<i class="s">"http://schemas.android.com/apk/res-auto"</i></span>
+<span class="l">    <i class="a">xmlns:tools</i>=<i class="s">"http://schemas.android.com/tools"</i></span>
+<span class="l">    <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">    <i class="a">android:layout_height</i>=<i class="s">"match_parent"</i></span>
+<span class="l">    <i class="a">android:fillViewport</i>=<i class="s">"true"</i></span>
+<span class="l">    <i class="a">android:background</i>=<i class="s">"?android:colorBackground"</i>></span>
+<span class="l"></span>
+<span class="l">    <i class="k"><LinearLayout</i></span>
+<span class="l">        <i class="a">android:id</i>=<i class="s">"@+id/main"</i></span>
+<span class="l">        <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">        <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">        <i class="a">android:orientation</i>=<i class="s">"vertical"</i></span>
+<span class="l">        <i class="a">android:padding</i>=<i class="s">"16dp"</i></span>
+<span class="l">        <i class="a">tools:context</i>=<i class="s">".MainActivity"</i>></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Header --></i></span>
+<span class="l">        <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">            <i class="a">android:text</i>=<i class="s">"Live Sensor Readings — Lifecycle & Interpretation"</i></span>
+<span class="l">            <i class="a">android:textSize</i>=<i class="s">"22sp"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">            <i class="a">android:textColor</i>=<i class="s">"?attr/colorPrimary"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i></span>
+<span class="l">            <i class="a">android:layout_marginBottom</i>=<i class="s">"8dp"</i> /></span>
+<span class="l"></span>
+<span class="l">        <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">            <i class="a">android:text</i>=<i class="s">"ICS 2300 — Lab 06"</i></span>
+<span class="l">            <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textSecondaryColor"</i></span>
+<span class="l">            <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i> /></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Experiment Question Card --></i></span>
+<span class="l">        <i class="k"><androidx.cardview.widget.CardView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">            <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i></span>
+<span class="l">            <i class="a">app:cardElevation</i>=<i class="s">"4dp"</i> <i class="a">app:cardCornerRadius</i>=<i class="s">"8dp"</i></span>
+<span class="l">            <i class="a">app:cardBackgroundColor</i>=<i class="s">"?attr/surfaceCardColor"</i>></span>
+<span class="l">            <i class="k"><LinearLayout</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:text</i>=<i class="s">"Experiment Question"</i> <i class="a">android:textSize</i>=<i class="s">"16sp"</i></span>
+<span class="l">                    <i class="a">android:textStyle</i>=<i class="s">"bold"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">                    <i class="a">android:layout_marginBottom</i>=<i class="s">"8dp"</i> /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvExperimentQuestion"</i></span>
+<span class="l">                    <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:text</i>=<i class="s">"How does ambient light intensity (lux) change across three controlled conditions: (1) sensor covered, (2) normal indoor lighting, (3) direct flashlight exposure?"</i></span>
+<span class="l">                    <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i></span>
+<span class="l">                    <i class="a">android:lineSpacingMultiplier</i>=<i class="s">"1.3"</i> /></span>
+<span class="l">            <i class="k"></LinearLayout></span>
+<span class="l">        <i class="k"></androidx.cardview.widget.CardView></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Sensor Information Card --></i></span>
+<span class="l">        <i class="k"><androidx.cardview.widget.CardView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">            <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i></span>
+<span class="l">            <i class="a">app:cardElevation</i>=<i class="s">"4dp"</i> <i class="a">app:cardCornerRadius</i>=<i class="s">"8dp"</i></span>
+<span class="l">            <i class="a">app:cardBackgroundColor</i>=<i class="s">"?attr/surfaceCardColor"</i>></span>
+<span class="l">            <i class="k"><LinearLayout</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:text</i>=<i class="s">"Sensor Information"</i> <i class="a">android:textSize</i>=<i class="s">"16sp"</i></span>
+<span class="l">                    <i class="a">android:textStyle</i>=<i class="s">"bold"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">                    <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i> /></span>
+<span class="l"></span>
+<span class="l">                <i class="c"><!-- Four label/value rows --></i></span>
+<span class="l">                <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"8dp"</i>></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Sensor:"</i></span>
+<span class="l">                        <i class="a">android:textStyle</i>=<i class="s">"bold"</i> <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvSensorName"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Light Sensor (TYPE_LIGHT)"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textSecondaryColor"</i> /></span>
+<span class="l">                <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">                <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"8dp"</i>></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Unit:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvSensorUnit"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"lux"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textSecondaryColor"</i> /></span>
+<span class="l">                <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">                <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"8dp"</i>></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Status:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvSensorStatus"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Checking..."</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textHintColor"</i> /></span>
+<span class="l">                <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">                <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i>></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Data Source:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvDataSource"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Measured"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/statusAvailableColor"</i> /></span>
+<span class="l">                <i class="k"></LinearLayout></span>
+<span class="l">            <i class="k"></LinearLayout></span>
+<span class="l">        <i class="k"></androidx.cardview.widget.CardView></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Live Reading Card --></i></span>
+<span class="l">        <i class="k"><androidx.cardview.widget.CardView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">            <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i></span>
+<span class="l">            <i class="a">app:cardElevation</i>=<i class="s">"4dp"</i> <i class="a">app:cardCornerRadius</i>=<i class="s">"8dp"</i></span>
+<span class="l">            <i class="a">app:cardBackgroundColor</i>=<i class="s">"?attr/surfaceCardColor"</i>></span>
+<span class="l">            <i class="k"><LinearLayout</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:text</i>=<i class="s">"Live Reading"</i> <i class="a">android:textSize</i>=<i class="s">"16sp"</i></span>
+<span class="l">                    <i class="a">android:textStyle</i>=<i class="s">"bold"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">                    <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i> /></span>
+<span class="l"></span>
+<span class="l">                <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i>></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Raw Value:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvRawValue"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"— lux"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">                <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i>></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Smoothed (EMA &alpha;=0.3):"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvSmoothedValue"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"— lux"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/colorPrimary"</i> /></span>
+<span class="l">                <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">                <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i>></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Timestamp:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvTimestamp"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"—"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textHintColor"</i> /></span>
+<span class="l">                <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">                <i class="k"><ProgressBar</i></span>
+<span class="l">                    <i class="a">android:id</i>=<i class="s">"@+id/progressLight"</i></span>
+<span class="l">                    <i class="a">style</i>=<i class="s">"@android:style/Widget.ProgressBar.Horizontal"</i></span>
+<span class="l">                    <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"12dp"</i></span>
+<span class="l">                    <i class="a">android:max</i>=<i class="s">"10000"</i> <i class="a">android:progress</i>=<i class="s">"0"</i></span>
+<span class="l">                    <i class="a">android:progressTint</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">                    <i class="a">android:progressBackgroundTint</i>=<i class="s">"?attr/colorSurfaceVariant"</i> /></span>
+<span class="l">            <i class="k"></LinearLayout></span>
+<span class="l">        <i class="k"></androidx.cardview.widget.CardView></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Lifecycle Controls Card --></i></span>
+<span class="l">        <i class="k"><androidx.cardview.widget.CardView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">            <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i></span>
+<span class="l">            <i class="a">app:cardElevation</i>=<i class="s">"4dp"</i> <i class="a">app:cardCornerRadius</i>=<i class="s">"8dp"</i></span>
+<span class="l">            <i class="a">app:cardBackgroundColor</i>=<i class="s">"?attr/surfaceCardColor"</i>></span>
+<span class="l">            <i class="k"><LinearLayout</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:text</i>=<i class="s">"Lifecycle Controls"</i> <i class="a">android:textSize</i>=<i class="s">"16sp"</i></span>
+<span class="l">                    <i class="a">android:textStyle</i>=<i class="s">"bold"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">                    <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i> /></span>
+<span class="l"></span>
+<span class="l">                <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"8dp"</i>></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Listener State:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvListenerState"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Unregistered"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textHintColor"</i> /></span>
+<span class="l">                <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">                <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i>></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"Lifecycle Phase:"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                    <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvLifecyclePhase"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:text</i>=<i class="s">"onCreate"</i></span>
+<span class="l">                        <i class="a">android:textSize</i>=<i class="s">"14sp"</i> <i class="a">android:gravity</i>=<i class="s">"end"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textHintColor"</i> /></span>
+<span class="l">                <i class="k"></LinearLayout></span>
+<span class="l"></span>
+<span class="l">                <i class="k"><LinearLayout</i> <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:layout_marginTop</i>=<i class="s">"8dp"</i>></span>
+<span class="l">                    <i class="k"><Button</i> <i class="a">android:id</i>=<i class="s">"@+id/btnRegister"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:layout_marginEnd</i>=<i class="s">"8dp"</i></span>
+<span class="l">                        <i class="a">android:text</i>=<i class="s">"Register Listener"</i></span>
+<span class="l">                        <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">                        <i class="a">android:textColor</i>=<i class="s">"?attr/colorOnPrimary"</i> /></span>
+<span class="l">                    <i class="k"><Button</i> <i class="a">android:id</i>=<i class="s">"@+id/btnUnregister"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:layout_marginStart</i>=<i class="s">"8dp"</i></span>
+<span class="l">                        <i class="a">android:text</i>=<i class="s">"Unregister Listener"</i></span>
+<span class="l">                        <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorSurfaceVariant"</i></span>
+<span class="l">                        <i class="a">android:textColor</i>=<i class="s">"?attr/colorOnSurfaceVariant"</i> /></span>
+<span class="l">                <i class="k"></LinearLayout></span>
+<span class="l">            <i class="k"></LinearLayout></span>
+<span class="l">        <i class="k"></androidx.cardview.widget.CardView></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Observation Table Card --></i></span>
+<span class="l">        <i class="k"><androidx.cardview.widget.CardView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">            <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i></span>
+<span class="l">            <i class="a">app:cardElevation</i>=<i class="s">"4dp"</i> <i class="a">app:cardCornerRadius</i>=<i class="s">"8dp"</i></span>
+<span class="l">            <i class="a">app:cardBackgroundColor</i>=<i class="s">"?attr/surfaceCardColor"</i>></span>
+<span class="l">            <i class="k"><LinearLayout</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:text</i>=<i class="s">"Observation Table (3 Controlled Conditions)"</i></span>
+<span class="l">                    <i class="a">android:textSize</i>=<i class="s">"16sp"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                    <i class="a">android:textColor</i>=<i class="s">"?attr/colorPrimary"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i> /></span>
+<span class="l"></span>
+<span class="l">                <i class="k"><TableLayout</i> <i class="a">android:id</i>=<i class="s">"@+id/tableObservations"</i></span>
+<span class="l">                    <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:stretchColumns</i>=<i class="s">"*"</i> <i class="a">android:shrinkColumns</i>=<i class="s">"*"</i>></span>
+<span class="l"></span>
+<span class="l">                    <i class="c"><!-- Header --></i></span>
+<span class="l">                    <i class="k"><TableRow</i> <i class="a">android:background</i>=<i class="s">"?attr/colorSurfaceVariant"</i>></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"Condition"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"Raw (lux)"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"Smoothed (lux)"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"Timestamp"</i> <i class="a">android:textStyle</i>=<i class="s">"bold"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                    <i class="k"></TableRow></span>
+<span class="l"></span>
+<span class="l">                    <i class="c"><!-- Row 1: Covered --></i></span>
+<span class="l">                    <i class="k"><TableRow></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"1. Covered"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs1Raw"</i></span>
+<span class="l">                            <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"—"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textSecondaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs1Smooth"</i></span>
+<span class="l">                            <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"—"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textSecondaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs1Time"</i></span>
+<span class="l">                            <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"—"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textHintColor"</i> /></span>
+<span class="l">                    <i class="k"></TableRow></span>
+<span class="l"></span>
+<span class="l">                    <i class="c"><!-- Row 2: Indoor Light --></i></span>
+<span class="l">                    <i class="k"><TableRow</i> <i class="a">android:background</i>=<i class="s">"?attr/colorSurfaceVariant"</i>></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"2. Indoor Light"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs2Raw"</i></span>
+<span class="l">                            <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"—"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textSecondaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs2Smooth"</i></span>
+<span class="l">                            <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"—"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textSecondaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs2Time"</i></span>
+<span class="l">                            <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"—"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textHintColor"</i> /></span>
+<span class="l">                    <i class="k"></TableRow></span>
+<span class="l"></span>
+<span class="l">                    <i class="c"><!-- Row 3: Flashlight --></i></span>
+<span class="l">                    <i class="k"><TableRow></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"3. Flashlight"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs3Raw"</i></span>
+<span class="l">                            <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"—"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textSecondaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs3Smooth"</i></span>
+<span class="l">                            <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"—"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textSecondaryColor"</i> /></span>
+<span class="l">                        <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvObs3Time"</i></span>
+<span class="l">                            <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                            <i class="a">android:padding</i>=<i class="s">"8dp"</i> <i class="a">android:text</i>=<i class="s">"—"</i></span>
+<span class="l">                            <i class="a">android:textSize</i>=<i class="s">"12sp"</i> <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textHintColor"</i> /></span>
+<span class="l">                    <i class="k"></TableRow></span>
+<span class="l">                <i class="k"></TableLayout></span>
+<span class="l"></span>
+<span class="l">                <i class="c"><!-- Record Buttons --></i></span>
+<span class="l">                <i class="k"><LinearLayout</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:orientation</i>=<i class="s">"horizontal"</i> <i class="a">android:layout_marginTop</i>=<i class="s">"12dp"</i></span>
+<span class="l">                    <i class="a">android:gravity</i>=<i class="s">"center"</i>></span>
+<span class="l">                    <i class="k"><Button</i> <i class="a">android:id</i>=<i class="s">"@+id/btnRecordObs1"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:layout_marginEnd</i>=<i class="s">"4dp"</i></span>
+<span class="l">                        <i class="a">android:text</i>=<i class="s">"Record Covered"</i></span>
+<span class="l">                        <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorSecondary"</i></span>
+<span class="l">                        <i class="a">android:textColor</i>=<i class="s">"?attr/colorOnSecondary"</i> <i class="a">android:textSize</i>=<i class="s">"12sp"</i> /></span>
+<span class="l">                    <i class="k"><Button</i> <i class="a">android:id</i>=<i class="s">"@+id/btnRecordObs2"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:layout_marginEnd</i>=<i class="s">"4dp"</i></span>
+<span class="l">                        <i class="a">android:layout_marginStart</i>=<i class="s">"4dp"</i> <i class="a">android:text</i>=<i class="s">"Record Indoor"</i></span>
+<span class="l">                        <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">                        <i class="a">android:textColor</i>=<i class="s">"?attr/colorOnPrimary"</i> <i class="a">android:textSize</i>=<i class="s">"12sp"</i> /></span>
+<span class="l">                    <i class="k"><Button</i> <i class="a">android:id</i>=<i class="s">"@+id/btnRecordObs3"</i></span>
+<span class="l">                        <i class="a">android:layout_width</i>=<i class="s">"0dp"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                        <i class="a">android:layout_weight</i>=<i class="s">"1"</i> <i class="a">android:layout_marginStart</i>=<i class="s">"4dp"</i></span>
+<span class="l">                        <i class="a">android:text</i>=<i class="s">"Record Flashlight"</i></span>
+<span class="l">                        <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorTertiary"</i></span>
+<span class="l">                        <i class="a">android:textColor</i>=<i class="s">"?attr/colorOnTertiary"</i> <i class="a">android:textSize</i>=<i class="s">"12sp"</i> /></span>
+<span class="l">                <i class="k"></LinearLayout></span>
+<span class="l">            <i class="k"></LinearLayout></span>
+<span class="l">        <i class="k"></androidx.cardview.widget.CardView></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Analysis Card --></i></span>
+<span class="l">        <i class="k"><androidx.cardview.widget.CardView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">            <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i></span>
+<span class="l">            <i class="a">app:cardElevation</i>=<i class="s">"4dp"</i> <i class="a">app:cardCornerRadius</i>=<i class="s">"8dp"</i></span>
+<span class="l">            <i class="a">app:cardBackgroundColor</i>=<i class="s">"?attr/surfaceCardColor"</i>></span>
+<span class="l">            <i class="k"><LinearLayout</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:text</i>=<i class="s">"Analysis & Interpretation"</i> <i class="a">android:textSize</i>=<i class="s">"16sp"</i></span>
+<span class="l">                    <i class="a">android:textStyle</i>=<i class="s">"bold"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">                    <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i> /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvAnalysis"</i></span>
+<span class="l">                    <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:text</i>=<i class="s">"Run the experiment to populate observations, then tap 'Generate Analysis' for interpretation."</i></span>
+<span class="l">                    <i class="a">android:textSize</i>=<i class="s">"13sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textPrimaryColor"</i></span>
+<span class="l">                    <i class="a">android:lineSpacingMultiplier</i>=<i class="s">"1.4"</i> /></span>
+<span class="l">                <i class="k"><Button</i> <i class="a">android:id</i>=<i class="s">"@+id/btnGenerateAnalysis"</i></span>
+<span class="l">                    <i class="a">android:layout_width</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:layout_marginTop</i>=<i class="s">"12dp"</i> <i class="a">android:layout_gravity</i>=<i class="s">"center"</i></span>
+<span class="l">                    <i class="a">android:text</i>=<i class="s">"Generate Analysis"</i></span>
+<span class="l">                    <i class="a">android:backgroundTint</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">                    <i class="a">android:textColor</i>=<i class="s">"?attr/colorOnPrimary"</i> /></span>
+<span class="l">            <i class="k"></LinearLayout></span>
+<span class="l">        <i class="k"></androidx.cardview.widget.CardView></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Technical Notes Card --></i></span>
+<span class="l">        <i class="k"><androidx.cardview.widget.CardView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i></span>
+<span class="l">            <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i> <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i></span>
+<span class="l">            <i class="a">app:cardElevation</i>=<i class="s">"4dp"</i> <i class="a">app:cardCornerRadius</i>=<i class="s">"8dp"</i></span>
+<span class="l">            <i class="a">app:cardBackgroundColor</i>=<i class="s">"?attr/surfaceCardColor"</i>></span>
+<span class="l">            <i class="k"><LinearLayout</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                <i class="a">android:orientation</i>=<i class="s">"vertical"</i> <i class="a">android:padding</i>=<i class="s">"16dp"</i>></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:text</i>=<i class="s">"Technical Notes"</i> <i class="a">android:textSize</i>=<i class="s">"16sp"</i></span>
+<span class="l">                    <i class="a">android:textStyle</i>=<i class="s">"bold"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/colorPrimary"</i></span>
+<span class="l">                    <i class="a">android:layout_marginBottom</i>=<i class="s">"12dp"</i> /></span>
+<span class="l">                <i class="k"><TextView</i> <i class="a">android:id</i>=<i class="s">"@+id/tvTechnicalNotes"</i></span>
+<span class="l">                    <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">                    <i class="a">android:text</i>=<i class="s">"&#8226; Sampling delay requested: SENSOR_DELAY_NORMAL (~200ms, but not guaranteed)</i></span>
+<span class="l"><i class="s">&#8226; Smoothing: Exponential Moving Average (EMA) with &alpha;=0.3</i></span>
+<span class="l"><i class="s">&#8226; Battery: Continuous listening at NORMAL rate ~1-3% per hour</i></span>
+<span class="l"><i class="s">&#8226; Missing sensor: App shows 'Unavailable' and disables controls</i></span>
+<span class="l"><i class="s">&#8226; Background: Listener unregistered in onPause, re-registered in onResume</i></span>
+<span class="l"><i class="s">&#8226; Rotation: Values retained via ViewModel / savedInstanceState"</i></span>
+<span class="l">                    <i class="a">android:textSize</i>=<i class="s">"12sp"</i></span>
+<span class="l">                    <i class="a">android:textColor</i>=<i class="s">"?attr/textSecondaryColor"</i></span>
+<span class="l">                    <i class="a">android:lineSpacingMultiplier</i>=<i class="s">"1.5"</i> /></span>
+<span class="l">            <i class="k"></LinearLayout></span>
+<span class="l">        <i class="k"></androidx.cardview.widget.CardView></span>
+<span class="l"></span>
+<span class="l">        <i class="c"><!-- Footer --></i></span>
+<span class="l">        <i class="k"><TextView</i> <i class="a">android:layout_width</i>=<i class="s">"match_parent"</i> <i class="a">android:layout_height</i>=<i class="s">"wrap_content"</i></span>
+<span class="l">            <i class="a">android:text</i>=<i class="s">"Lab 06 — Live Sensor Readings, Lifecycle and Interpretation"</i></span>
+<span class="l">            <i class="a">android:textSize</i>=<i class="s">"11sp"</i> <i class="a">android:textColor</i>=<i class="s">"?attr/textHintColor"</i></span>
+<span class="l">            <i class="a">android:gravity</i>=<i class="s">"center"</i> <i class="a">android:layout_marginTop</i>=<i class="s">"8dp"</i></span>
+<span class="l">            <i class="a">android:layout_marginBottom</i>=<i class="s">"16dp"</i> /></span>
+<span class="l"></span>
+<span class="l">    <i class="k"></LinearLayout></span>
+<span class="l"><i class="k"></ScrollView></span>
+</pre></figure></details>
+
+<h2>4 &middot; Activity Logic (MainActivity.java)</h2>
+<p>The Activity implements <code>SensorEventListener</code> and coordinates four concerns: <b>sensor setup &rarr; lifecycle-aware registration &rarr; EMA smoothing &rarr; observation recording & analysis</b>.</p>
+
+<h3>4.1 Imports and Member Fields</h3>
+<p>Key fields include the <code>SensorManager</code>, <code>Sensor</code>, <code>ViewModel</code>, all UI references, listener state flag, EMA state, and three <code>Observation</code> objects.</p>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; imports & fields</b></figcaption><pre><span class="l"><i class="k">package</i> com.example.live_sensor_readings_lifecycle;</span>
+<span class="l"></span>
+<span class="l"><i class="k">import</i> android.content.Context;</span>
+<span class="l"><i class="k">import</i> android.hardware.Sensor;</span>
+<span class="l"><i class="k">import</i> android.hardware.SensorEvent;</span>
+<span class="l"><i class="k">import</i> android.hardware.SensorEventListener;</span>
+<span class="l"><i class="k">import</i> android.hardware.SensorManager;</span>
+<span class="l"><i class="k">import</i> android.os.Bundle;</span>
+<span class="l"><i class="k">import</i> android.os.SystemClock;</span>
+<span class="l"><i class="k">import</i> android.util.Log;</span>
+<span class="l"><i class="k">import</i> android.view.View;</span>
+<span class="l"><i class="k">import</i> android.widget.Button;</span>
+<span class="l"><i class="k">import</i> android.widget.TextView;</span>
+<span class="l"><i class="k">import</i> android.widget.Toast;</span>
+<span class="l"></span>
+<span class="l"><i class="k">import</i> androidx.activity.EdgeToEdge;</span>
+<span class="l"><i class="k">import</i> androidx.appcompat.app.AppCompatActivity;</span>
+<span class="l"><i class="k">import</i> androidx.core.graphics.Insets;</span>
+<span class="l"><i class="k">import</i> androidx.core.view.ViewCompat;</span>
+<span class="l"><i class="k">import</i> androidx.core.view.WindowInsetsCompat;</span>
+<span class="l"><i class="k">import</i> androidx.lifecycle.ViewModel;</span>
+<span class="l"><i class="k">import</i> androidx.lifecycle.ViewModelProvider;</span>
+<span class="l"></span>
+<span class="l"><i class="k">import</i> java.text.SimpleDateFormat;</span>
+<span class="l"><i class="k">import</i> java.util.Date;</span>
+<span class="l"><i class="k">import</i> java.util.Locale;</span>
+<span class="l"></span>
+<span class="l"><i class="k">public</i> <i class="k">class</i> <i class="t">MainActivity</i> <i class="k">extends</i> <i class="t">AppCompatActivity</i> <i class="k">implements</i> <i class="t">SensorEventListener</i> {</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="k">static</i> <i class="k">final</i> <i class="k">String</i> TAG = <i class="s">"LiveSensorLab06"</i>;</span>
+<span class="l">    <i class="k">private</i> <i class="k">static</i> <i class="k">final</i> <i class="k">float</i> EMA_ALPHA = <i class="n">0.3f</i>;</span>
+<span class="l">    <i class="k">private</i> <i class="k">static</i> <i class="k">final</i> <i class="k">int</i> PROGRESS_MAX = <i class="n">10000</i>; <i class="c">// 10k lux max for progress bar</i></span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="t">SensorManager</i> sensorManager;</span>
+<span class="l">    <i class="k">private</i> <i class="t">Sensor</i> lightSensor;</span>
+<span class="l">    <i class="k">private</i> <i class="t">SensorViewModel</i> viewModel;</span>
+<span class="l"></span>
+<span class="l">    <i class="c">// UI Elements</i></span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvSensorName, tvSensorUnit, tvSensorStatus, tvDataSource;</span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvRawValue, tvSmoothedValue, tvTimestamp, tvListenerState, tvLifecyclePhase;</span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvAnalysis, tvTechnicalNotes;</span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvObs1Raw, tvObs1Smooth, tvObs1Time;</span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvObs2Raw, tvObs2Smooth, tvObs2Time;</span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvObs3Raw, tvObs3Smooth, tvObs3Time;</span>
+<span class="l">    <i class="k">private</i> <i class="t">Button</i> btnRegister, btnUnregister;</span>
+<span class="l">    <i class="k">private</i> <i class="t">Button</i> btnRecordObs1, btnRecordObs2, btnRecordObs3;</span>
+<span class="l">    <i class="k">private</i> <i class="t">Button</i> btnGenerateAnalysis;</span>
+<span class="l">    <i class="k">private</i> <i class="t">ProgressBar</i> progressLight;</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="k">boolean</i> isListenerRegistered = <i class="k">false</i>;</span>
+<span class="l">    <i class="k">private</i> <i class="k">float</i> smoothedValue = <i class="n">0f</i>;</span>
+<span class="l">    <i class="k">private</i> <i class="k">boolean</i> hasFirstReading = <i class="k">false</i>;</span>
+<span class="l"></span>
+<span class="l">    <i class="c">// Observation storage</i></span>
+<span class="l">    <i class="k">private</i> <i class="k">static</i> <i class="k">class</i> <i class="t">Observation</i> {</span>
+<span class="l">        <i class="k">float</i> raw;</span>
+<span class="l">        <i class="k">float</i> smoothed;</span>
+<span class="l">        <i class="k">String</i> timestamp;</span>
+<span class="l">    }</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="t">Observation</i> obs1 = <i class="k">null</i>, obs2 = <i class="k">null</i>, obs3 = <i class="k">null</i>;</span>
+</pre></figure>
+
+<h3>4.2 onCreate(): Binding Views, ViewModel, Sensor, and State Restoration</h3>
+<p>Initializes EdgeToEdge, binds views with null-checks, creates the <code>ViewModel</code>, obtains the light sensor, wires click listeners, checks sensor availability, and restores saved instance state.</p>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; onCreate</b></figcaption><pre><span class="l">    <i class="a">@Override</i></span>
+<span class="l">    <i class="k">protected</i> <i class="k">void</i> onCreate(<i class="t">Bundle</i> savedInstanceState) {</span>
+<span class="l">        <i class="k">super</i>.onCreate(savedInstanceState);</span>
+<span class="l">        </span>
+<span class="l">        <i class="c">// EdgeToEdge.enable can crash on some devices/API levels - wrap in try-catch</i></span>
+<span class="l">        <i class="k">try</i> {</span>
+<span class="l">            EdgeToEdge.enable(<i class="k">this</i>);</span>
+<span class="l">        } <i class="k">catch</i> (<i class="t">Exception</i> e) {</span>
+<span class="l">            Log.w(TAG, <i class="s">"EdgeToEdge.enable failed, continuing without edge-to-edge: "</i> + e.getMessage());</span>
+<span class="l">        }</span>
+<span class="l">        </span>
+<span class="l">        setContentView(<i class="t">R</i>.layout.activity_main);</span>
+<span class="l">        </span>
+<span class="l">        <i class="c">// Safely apply window insets listener</i></span>
+<span class="l">        View mainView = findViewById(<i class="t">R</i>.id.main);</span>
+<span class="l">        <i class="k">if</i> (mainView != <i class="k">null</i>) {</span>
+<span class="l">            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {</span>
+<span class="l">                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());</span>
+<span class="l">                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);</span>
+<span class="l">                <i class="k">return</i> insets;</span>
+<span class="l">            });</span>
+<span class="l">        } <i class="k">else</i> {</span>
+<span class="l">            Log.e(TAG, <i class="s">"Main view (R.id.main) not found in layout!"</i>);</span>
+<span class="l">        }</span>
+<span class="l"></span>
+<span class="l">        updateLifecyclePhase(<i class="s">"onCreate"</i>);</span>
+<span class="l"></span>
+<span class="l">        <i class="c">// Initialize ViewModel with error handling</i></span>
+<span class="l">        <i class="k">try</i> {</span>
+<span class="l">            viewModel = <i class="k">new</i> ViewModelProvider(<i class="k">this</i>).get(SensorViewModel.<i class="k">class</i>);</span>
+<span class="l">        } <i class="k">catch</i> (<i class="t">Exception</i> e) {</span>
+<span class="l">            Log.e(TAG, <i class="s">"Failed to create ViewModel: "</i> + e.getMessage(), e);</span>
+<span class="l">            <i class="c">// Create a fallback ViewModel instance</i></span>
+<span class="l">            viewModel = <i class="k">new</i> SensorViewModel();</span>
+<span class="l">        }</span>
+<span class="l"></span>
+<span class="l">        <i class="c">// Initialize SensorManager</i></span>
+<span class="l">        sensorManager = (<i class="t">SensorManager</i>) getSystemService(Context.SENSOR_SERVICE);</span>
+<span class="l">        <i class="k">if</i> (sensorManager == <i class="k">null</i>) {</span>
+<span class="l">            Log.e(TAG, <i class="s">"SensorManager is null - sensor service unavailable"</i>);</span>
+<span class="l">        } <i class="k">else</i> {</span>
+<span class="l">            lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);</span>
+<span class="l">        }</span>
+<span class="l"></span>
+<span class="l">        initViews();</span>
+<span class="l">        setupClickListeners();</span>
+<span class="l">        checkSensorAvailability();</span>
+<span class="l">        restoreState(savedInstanceState);</span>
+<span class="l">    }</span>
+</pre></figure>
+
+<h3>4.3 Sensor Availability Check</h3>
+<p>If the light sensor is missing, the UI shows <code>Unavailable</code>, disables all controls, and displays a Toast. Otherwise it populates the sensor name, version, unit, and status.</p>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; checkSensorAvailability</b></figcaption><pre><span class="l">    <i class="k">private</i> <i class="k">void</i> checkSensorAvailability() {</span>
+<span class="l">        <i class="c">// Guard against null views</i></span>
+<span class="l">        <i class="k">if</i> (tvSensorStatus == <i class="k">null</i> || tvDataSource == <i class="k">null</i> || btnRegister == <i class="k">null</i> || </span>
+<span class="l">            btnUnregister == <i class="k">null</i> || btnRecordObs1 == <i class="k">null</i> || btnRecordObs2 == <i class="k">null</i> || </span>
+<span class="l">            btnRecordObs3 == <i class="k">null</i>) {</span>
+<span class="l">            Log.e(TAG, <i class="s">"Cannot check sensor availability - critical views are null"</i>);</span>
+<span class="l">            <i class="k">return</i>;</span>
+<span class="l">        }</span>
+<span class="l">        </span>
+<span class="l">        <i class="k">if</i> (lightSensor == <i class="k">null</i>) {</span>
+<span class="l">            tvSensorStatus.setText(<i class="s">"Unavailable — No light sensor on device"</i>);</span>
+<span class="l">            tvSensorStatus.setTextColor(<i class="n">0xFFB00020</i>);</span>
+<span class="l">            tvDataSource.setText(<i class="s">"N/A"</i>);</span>
+<span class="l">            tvDataSource.setTextColor(<i class="n">0xFFB00020</i>);</span>
+<span class="l">            btnRegister.setEnabled(<i class="k">false</i>);</span>
+<span class="l">            btnUnregister.setEnabled(<i class="k">false</i>);</span>
+<span class="l">            btnRecordObs1.setEnabled(<i class="k">false</i>);</span>
+<span class="l">            btnRecordObs2.setEnabled(<i class="k">false</i>);</span>
+<span class="l">            btnRecordObs3.setEnabled(<i class="k">false</i>);</span>
+<span class="l">            Toast.makeText(<i class="k">this</i>, <i class="s">"Light sensor not available on this device"</i>, Toast.LENGTH_LONG).show();</span>
+<span class="l">            Log.w(TAG, <i class="s">"Light sensor not available"</i>);</span>
+<span class="l">        } <i class="k">else</i> {</span>
+<span class="l">            tvSensorStatus.setText(<i class="s">"Available"</i>);</span>
+<span class="l">            tvSensorStatus.setTextColor(<i class="n">0xFF174d43</i>);</span>
+<span class="l">            <i class="k">if</i> (tvSensorName != <i class="k">null</i>) {</span>
+<span class="l">                tvSensorName.setText(lightSensor.getName() + <i class="s">" (v"</i> + lightSensor.getVersion() + <i class="s">")"</i>);</span>
+<span class="l">            }</span>
+<span class="l">            <i class="k">if</i> (tvSensorUnit != <i class="k">null</i>) {</span>
+<span class="l">                tvSensorUnit.setText(<i class="s">"lux"</i>);</span>
+<span class="l">            }</span>
+<span class="l">            tvDataSource.setText(<i class="s">"Measured"</i>);</span>
+<span class="l">            tvDataSource.setTextColor(<i class="n">0xFF174d43</i>);</span>
+<span class="l">            Log.i(TAG, <i class="s">"Light sensor found: "</i> + lightSensor.getName() + <i class="s">", vendor: "</i> + lightSensor.getVendor() +</span>
+<span class="l">                    <i class="s">", maxRange: "</i> + lightSensor.getMaximumRange() + <i class="s">", resolution: "</i> + lightSensor.getResolution() +</span>
+<span class="l">                    <i class="s">", power: "</i> + lightSensor.getPower() + <i class="s">"mA"</i>);</span>
+<span class="l">        }</span>
+<span class="l">    }</span>
+</pre></figure>
+
+<h3>4.4 Register / Unregister Listener</h3>
+<p><code>registerListener()</code> uses <code>SENSOR_DELAY_NORMAL</code> (~200 ms). A boolean flag prevents duplicate registration. <code>unregisterListener()</code> cleans up and updates UI. Both update <code>tvListenerState</code> and button enabled states.</p>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; register / unregister</b></figcaption><pre><span class="l">    <i class="k">private</i> <i class="k">void</i> registerListener() {</span>
+<span class="l">        <i class="k">if</i> (sensorManager == <i class="k">null</i> || lightSensor == <i class="k">null</i>) {</span>
+<span class="l">            Toast.makeText(<i class="k">this</i>, <i class="s">"Sensor service or light sensor unavailable"</i>, Toast.LENGTH_SHORT).show();</span>
+<span class="l">            Log.e(TAG, <i class="s">"registerListener: sensorManager="</i> + sensorManager + <i class="s">", lightSensor="</i> + lightSensor);</span>
+<span class="l">            <i class="k">return</i>;</span>
+<span class="l">        }</span>
+<span class="l">        <i class="k">if</i> (isListenerRegistered) {</span>
+<span class="l">            Toast.makeText(<i class="k">this</i>, <i class="s">"Listener already registered"</i>, Toast.LENGTH_SHORT).show();</span>
+<span class="l">            <i class="k">return</i>;</span>
+<span class="l">        }</span>
+<span class="l"></span>
+<span class="l">        <i class="k">boolean</i> success = sensorManager.registerListener(<i class="k">this</i>, lightSensor, SensorManager.SENSOR_DELAY_NORMAL);</span>
+<span class="l">        <i class="k">if</i> (success) {</span>
+<span class="l">            isListenerRegistered = <i class="k">true</i>;</span>
+<span class="l">            updateListenerStateUI();</span>
+<span class="l">            Log.i(TAG, <i class="s">"Listener registered with SENSOR_DELAY_NORMAL"</i>);</span>
+<span class="l">            Toast.makeText(<i class="k">this</i>, <i class="s">"Listener registered (SENSOR_DELAY_NORMAL ~200ms)"</i>, Toast.LENGTH_SHORT).show();</span>
+<span class="l">        } <i class="k">else</i> {</span>
+<span class="l">            Log.e(TAG, <i class="s">"Failed to register listener"</i>);</span>
+<span class="l">            Toast.makeText(<i class="k">this</i>, <i class="s">"Failed to register listener"</i>, Toast.LENGTH_SHORT).show();</span>
+<span class="l">        }</span>
+<span class="l">    }</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="k">void</i> unregisterListener() {</span>
+<span class="l">        <i class="k">if</i> (sensorManager == <i class="k">null</i>) {</span>
+<span class="l">            Log.w(TAG, <i class="s">"unregisterListener: sensorManager is null"</i>);</span>
+<span class="l">            isListenerRegistered = <i class="k">false</i>;</span>
+<span class="l">            updateListenerStateUI();</span>
+<span class="l">            <i class="k">return</i>;</span>
+<span class="l">        }</span>
+<span class="l">        </span>
+<span class="l">        <i class="k">if</i> (!isListenerRegistered) {</span>
+<span class="l">            Toast.makeText(<i class="k">this</i>, <i class="s">"Listener not registered"</i>, Toast.LENGTH_SHORT).show();</span>
+<span class="l">            <i class="k">return</i>;</span>
+<span class="l">        }</span>
+<span class="l"></span>
+<span class="l">        sensorManager.unregisterListener(<i class="k">this</i>);</span>
+<span class="l">        isListenerRegistered = <i class="k">false</i>;</span>
+<span class="l">        updateListenerStateUI();</span>
+<span class="l">        Log.i(TAG, <i class="s">"Listener unregistered"</i>);</span>
+<span class="l">        Toast.makeText(<i class="k">this</i>, <i class="s">"Listener unregistered"</i>, Toast.LENGTH_SHORT).show();</span>
+<span class="l">    }</span>
+</pre></figure>
+
+<h3>4.5 SensorEventListener: onSensorChanged & onAccuracyChanged</h3>
+<p><code>onSensorChanged</code> receives raw lux, applies EMA smoothing (<code>&alpha;=0.3</code>), updates all UI elements on the main thread, clamps the progress bar to 10,000 lux, and saves the latest values to the ViewModel for rotation survival. <code>onAccuracyChanged</code> updates the data source label color when accuracy drops to UNRELIABLE.</p>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; onSensorChanged</b></figcaption><pre><span class="l">    <i class="c">// ===== SensorEventListener =====</i></span>
+<span class="l">    <i class="a">@Override</i></span>
+<span class="l">    <i class="k">public</i> <i class="k">void</i> onSensorChanged(<i class="t">SensorEvent</i> event) {</span>
+<span class="l">        <i class="k">if</i> (event.sensor.getType() == Sensor.TYPE_LIGHT) {</span>
+<span class="l">            <i class="k">float</i> raw = event.values[<i class="n">0</i>];</span>
+<span class="l"></span>
+<span class="l">            <i class="c">// EMA smoothing</i></span>
+<span class="l">            <i class="k">if</i> (!hasFirstReading) {</span>
+<span class="l">                smoothedValue = raw;</span>
+<span class="l">                hasFirstReading = <i class="k">true</i>;</span>
+<span class="l">            } <i class="k">else</i> {</span>
+<span class="l">                smoothedValue = EMA_ALPHA * raw + (<i class="n">1</i> - EMA_ALPHA) * smoothedValue;</span>
+<span class="l">            }</span>
+<span class="l"></span>
+<span class="l">            <i class="c">// Update UI on main thread - guard against null views</i></span>
+<span class="l">            runOnUiThread(() -> {</span>
+<span class="l">                <i class="k">if</i> (tvRawValue != <i class="k">null</i>) {</span>
+<span class="l">                    tvRawValue.setText(String.format(Locale.getDefault(), <i class="s">"%.1f lux"</i>, raw));</span>
+<span class="l">                }</span>
+<span class="l">                <i class="k">if</i> (tvSmoothedValue != <i class="k">null</i>) {</span>
+<span class="l">                    tvSmoothedValue.setText(String.format(Locale.getDefault(), <i class="s">"%.1f lux"</i>, smoothedValue));</span>
+<span class="l">                }</span>
+<span class="l">                <i class="k">if</i> (tvTimestamp != <i class="k">null</i>) {</span>
+<span class="l">                    tvTimestamp.setText(<i class="k">new</i> SimpleDateFormat(<i class="s">"HH:mm:ss.SSS"</i>, Locale.getDefault()).format(<i class="k">new</i> Date()));</span>
+<span class="l">                }</span>
+<span class="l">                <i class="k">if</i> (progressLight != <i class="k">null</i>) {</span>
+<span class="l">                    <i class="c">// Progress bar (clamped to max)</i></span>
+<span class="l">                    <i class="k">int</i> progress = Math.min((<i class="k">int</i>) raw, PROGRESS_MAX);</span>
+<span class="l">                    progressLight.setProgress(progress);</span>
+<span class="l">                }</span>
+<span class="l">            });</span>
+<span class="l"></span>
+<span class="l">            <i class="c">// Save to ViewModel for rotation survival</i></span>
+<span class="l">            <i class="k">if</i> (viewModel != <i class="k">null</i>) {</span>
+<span class="l">                viewModel.setLastRaw(raw);</span>
+<span class="l">                viewModel.setLastSmoothed(smoothedValue);</span>
+<span class="l">                viewModel.setHasFirstReading(hasFirstReading);</span>
+<span class="l">            }</span>
+<span class="l">        }</span>
+<span class="l">    }</span>
+</pre></figure>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; onAccuracyChanged</b></figcaption><pre><span class="l">    <i class="a">@Override</i></span>
+<span class="l">    <i class="k">public</i> <i class="k">void</i> onAccuracyChanged(<i class="t">Sensor</i> sensor, <i class="k">int</i> accuracy) {</span>
+<span class="l">        <i class="k">String</i> accuracyStr;</span>
+<span class="l">        <i class="k">switch</i> (accuracy) {</span>
+<span class="l">            <i class="k">case</i> SensorManager.SENSOR_STATUS_UNRELIABLE: accuracyStr = <i class="s">"UNRELIABLE"</i>; <i class="k">break</i>;</span>
+<span class="l">            <i class="k">case</i> SensorManager.SENSOR_STATUS_ACCURACY_LOW: accuracyStr = <i class="s">"LOW"</i>; <i class="k">break</i>;</span>
+<span class="l">            <i class="k">case</i> SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM: accuracyStr = <i class="s">"MEDIUM"</i>; <i class="k">break</i>;</span>
+<span class="l">            <i class="k">case</i> SensorManager.SENSOR_STATUS_ACCURACY_HIGH: accuracyStr = <i class="s">"HIGH"</i>; <i class="k">break</i>;</span>
+<span class="l">            <i class="k">default</i>: accuracyStr = <i class="s">"UNKNOWN("</i> + accuracy + <i class="s">")"</i>;</span>
+<span class="l">        }</span>
+<span class="l">        Log.w(TAG, <i class="s">"Sensor accuracy changed: "</i> + accuracyStr);</span>
+<span class="l">        runOnUiThread(() -> {</span>
+<span class="l">            <i class="k">if</i> (tvDataSource != <i class="k">null</i>) {</span>
+<span class="l">                <i class="k">if</i> (accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {</span>
+<span class="l">                    tvDataSource.setText(<i class="s">"Unreliable"</i>);</span>
+<span class="l">                    tvDataSource.setTextColor(<i class="n">0xFFFF8F00</i>);</span>
+<span class="l">                } <i class="k">else</i> {</span>
+<span class="l">                    tvDataSource.setText(<i class="s">"Measured"</i>);</span>
+<span class="l">                    tvDataSource.setTextColor(<i class="n">0xFF174d43</i>);</span>
+<span class="l">                }</span>
+<span class="l">            }</span>
+<span class="l">        });</span>
+<span class="l">    }</span>
+</pre></figure>
+<div class="note warn"><p>&#9888;&#65039; <b>Watch out.</b> <code>SensorEventListener</code> callbacks run on a sensor thread, <b>not</b> the main thread. Always wrap UI updates in <code>runOnUiThread()</code> or use <code>Handler</code>/<code>LiveData</code>. The code above guards every view reference with null-checks to survive layout mismatches.</p></div>
+
+<h3>4.6 Lifecycle Methods: Visible-Lifecycle Registration</h3>
+<p>The app follows the <b>visible lifecycle</b> pattern: register in <code>onResume</code>, unregister in <code>onPause</code>. This prevents background battery drain and duplicate listeners after rotation. <code>onDestroy</code> adds a final safety cleanup. Each phase logs to <code>tvLifecyclePhase</code> for debugging.</p>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; lifecycle methods</b></figcaption><pre><span class="l">    <i class="c">// ===== Lifecycle =====</i></span>
+<span class="l">    <i class="a">@Override</i></span>
+<span class="l">    <i class="k">protected</i> <i class="k">void</i> onStart() {</span>
+<span class="l">        <i class="k">super</i>.onStart();</span>
+<span class="l">        updateLifecyclePhase(<i class="s">"onStart"</i>);</span>
+<span class="l">    }</span>
+<span class="l"></span>
+<span class="l">    <i class="a">@Override</i></span>
+<span class="l">    <i class="k">protected</i> <i class="k">void</i> onResume() {</span>
+<span class="l">        <i class="k">super</i>.onResume();</span>
+<span class="l">        updateLifecyclePhase(<i class="s">"onResume (visible) — auto-register"</i>);</span>
+<span class="l">        <i class="c">// Visible lifecycle: register when UI becomes visible</i></span>
+<span class="l">        <i class="k">if</i> (lightSensor != <i class="k">null</i> && !isListenerRegistered && sensorManager != <i class="k">null</i>) {</span>
+<span class="l">            registerListener();</span>
+<span class="l">        }</span>
+<span class="l">    }</span>
+<span class="l"></span>
+<span class="l">    <i class="a">@Override</i></span>
+<span class="l">    <i class="k">protected</i> <i class="k">void</i> onPause() {</span>
+<span class="l">        <i class="k">super</i>.onPause();</span>
+<span class="l">        updateLifecyclePhase(<i class="s">"onPause (hidden) — auto-unregister"</i>);</span>
+<span class="l">        <i class="c">// Visible lifecycle: unregister when UI no longer visible</i></span>
+<span class="l">        <i class="c">// Prevents background battery drain and duplicate listeners</i></span>
+<span class="l">        <i class="k">if</i> (isListenerRegistered && sensorManager != <i class="k">null</i>) {</span>
+<span class="l">            unregisterListener();</span>
+<span class="l">        }</span>
+<span class="l">    }</span>
+<span class="l"></span>
+<span class="l">    <i class="a">@Override</i></span>
+<span class="l">    <i class="k">protected</i> <i class="k">void</i> onStop() {</span>
+<span class="l">        <i class="k">super</i>.onStop();</span>
+<span class="l">        updateLifecyclePhase(<i class="s">"onStop"</i>);</span>
+<span class="l">    }</span>
+<span class="l"></span>
+<span class="l">    <i class="a">@Override</i></span>
+<span class="l">    <i class="k">protected</i> <i class="k">void</i> onDestroy() {</span>
+<span class="l">        <i class="k">super</i>.onDestroy();</span>
+<span class="l">        updateLifecyclePhase(<i class="s">"onDestroy"</i>);</span>
+<span class="l">        <i class="c">// Ensure cleanup</i></span>
+<span class="l">        <i class="k">if</i> (isListenerRegistered && sensorManager != <i class="k">null</i>) {</span>
+<span class="l">            sensorManager.unregisterListener(<i class="k">this</i>);</span>
+<span class="l">        }</span>
+<span class="l">    }</span>
+</pre></figure>
+
+<h3>4.7 Recording Observations</h3>
+<p>Each <code>Record</code> button calls <code>recordObservation(n)</code> which reads the current raw/smoothed values from the UI, timestamps them, and stores them in the corresponding <code>Observation</code> object. The table row is updated immediately.</p>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; recordObservation</b></figcaption><pre><span class="l">    <i class="k">private</i> <i class="k">void</i> recordObservation(<i class="k">int</i> obsNumber) {</span>
+<span class="l">        <i class="k">if</i> (!hasFirstReading) {</span>
+<span class="l">            Toast.makeText(<i class="k">this</i>, <i class="s">"No sensor reading yet. Wait for live data."</i>, Toast.LENGTH_SHORT).show();</span>
+<span class="l">            <i class="k">return</i>;</span>
+<span class="l">        }</span>
+<span class="l">        </span>
+<span class="l">        <i class="c">// Guard against null views</i></span>
+<span class="l">        <i class="k">if</i> (tvRawValue == <i class="k">null</i>) {</span>
+<span class="l">            Log.e(TAG, <i class="s">"recordObservation: tvRawValue is null"</i>);</span>
+<span class="l">            Toast.makeText(<i class="k">this</i>, <i class="s">"UI not ready"</i>, Toast.LENGTH_SHORT).show();</span>
+<span class="l">            <i class="k">return</i>;</span>
+<span class="l">        }</span>
+<span class="l">        </span>
+<span class="l">        <i class="k">String</i> timestamp = <i class="k">new</i> SimpleDateFormat(<i class="s">"HH:mm:ss.SSS"</i>, Locale.getDefault()).format(<i class="k">new</i> Date());</span>
+<span class="l">        <i class="t">Observation</i> obs = <i class="k">new</i> <i class="t">Observation</i>();</span>
+<span class="l">        </span>
+<span class="l">        <i class="k">try</i> {</span>
+<span class="l">            <i class="k">String</i> rawText = tvRawValue.getText().toString().replace(<i class="s">" lux"</i>, <i class="s">""</i>);</span>
+<span class="l">            obs.raw = Float.parseFloat(rawText);</span>
+<span class="l">        } <i class="k">catch</i> (NumberFormatException e) {</span>
+<span class="l">            Log.e(TAG, <i class="s">"Failed to parse raw value: "</i> + tvRawValue.getText(), e);</span>
+<span class="l">            Toast.makeText(<i class="k">this</i>, <i class="s">"Invalid sensor reading"</i>, Toast.LENGTH_SHORT).show();</span>
+<span class="l">            <i class="k">return</i>;</span>
+<span class="l">        }</span>
+<span class="l">        </span>
+<span class="l">        obs.smoothed = smoothedValue;</span>
+<span class="l">        obs.timestamp = timestamp;</span>
+<span class="l">        </span>
+<span class="l">        <i class="k">switch</i> (obsNumber) {</span>
+<span class="l">            <i class="k">case</i> <i class="n">1</i>:</span>
+<span class="l">                obs1 = obs;</span>
+<span class="l">                <i class="k">if</i> (tvObs1Raw != <i class="k">null</i>) tvObs1Raw.setText(String.format(Locale.getDefault(), <i class="s">"%.1f"</i>, obs.raw));</span>
+<span class="l">                <i class="k">if</i> (tvObs1Smooth != <i class="k">null</i>) tvObs1Smooth.setText(String.format(Locale.getDefault(), <i class="s">"%.1f"</i>, obs.smoothed));</span>
+<span class="l">                <i class="k">if</i> (tvObs1Time != <i class="k">null</i>) tvObs1Time.setText(timestamp);</span>
+<span class="l">                <i class="k">break</i>;</span>
+<span class="l">            <i class="k">case</i> <i class="n">2</i>:</span>
+<span class="l">                obs2 = obs;</span>
+<span class="l">                <i class="k">if</i> (tvObs2Raw != <i class="k">null</i>) tvObs2Raw.setText(String.format(Locale.getDefault(), <i class="s">"%.1f"</i>, obs.raw));</span>
+<span class="l">                <i class="k">if</i> (tvObs2Smooth != <i class="k">null</i>) tvObs2Smooth.setText(String.format(Locale.getDefault(), <i class="s">"%.1f"</i>, obs.smoothed));</span>
+<span class="l">                <i class="k">if</i> (tvObs2Time != <i class="k">null</i>) tvObs2Time.setText(timestamp);</span>
+<span class="l">                <i class="k">break</i>;</span>
+<span class="l">            <i class="k">case</i> <i class="n">3</i>:</span>
+<span class="l">                obs3 = obs;</span>
+<span class="l">                <i class="k">if</i> (tvObs3Raw != <i class="k">null</i>) tvObs3Raw.setText(String.format(Locale.getDefault(), <i class="s">"%.1f"</i>, obs.raw));</span>
+<span class="l">                <i class="k">if</i> (tvObs3Smooth != <i class="k">null</i>) tvObs3Smooth.setText(String.format(Locale.getDefault(), <i class="s">"%.1f"</i>, obs.smoothed));</span>
+<span class="l">                <i class="k">if</i> (tvObs3Time != <i class="k">null</i>) tvObs3Time.setText(timestamp);</span>
+<span class="l">                <i class="k">break</i>;</span>
+<span class="l">        }</span>
+<span class="l">        </span>
+<span class="l">        Toast.makeText(<i class="k">this</i>, <i class="s">"Observation "</i> + obsNumber + <i class="s">" recorded"</i>, Toast.LENGTH_SHORT).show();</span>
+<span class="l">        Log.i(TAG, <i class="s">"Obs "</i> + obsNumber + <i class="s">": raw="</i> + obs.raw + <i class="s">", smooth="</i> + obs.smoothed + <i class="s">" @ "</i> + timestamp);</span>
+<span class="l">    }</span>
+</pre></figure>
+
+<h3>4.8 Generating the Analysis Report</h3>
+<p><code>generateAnalysis()</code> builds a structured string covering: confirmation of three observations, raw/smoothed values per condition, pattern interpretation (monotonic increase expected), confounding factors (calibration, spectral response, cosine error, temperature, casing), sampling & timing notes (requested vs actual rate, batching, no hardware timestamp), battery cost estimates, and EMA smoothing trade-offs. It concludes with a lifecycle behavior summary.</p>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; generateAnalysis (excerpt)</b></figcaption><pre><span class="l">    <i class="k">private</i> <i class="k">void</i> generateAnalysis() {</span>
+<span class="l">        <i class="k">if</i> (tvAnalysis == <i class="k">null</i>) {</span>
+<span class="l">            Log.e(TAG, <i class="s">"generateAnalysis: tvAnalysis is null"</i>);</span>
+<span class="l">            <i class="k">return</i>;</span>
+<span class="l">        }</span>
+<span class="l">        </span>
+<span class="l">        StringBuilder analysis = <i class="k">new</i> StringBuilder();</span>
+<span class="l">        </span>
+<span class="l">        <i class="k">if</i> (obs1 == <i class="k">null</i> || obs2 == <i class="k">null</i> || obs3 == <i class="k">null</i>) {</span>
+<span class="l">            analysis.append(<i class="s">"&#9888; Complete all 3 observations first.\n\n"</i>);</span>
+<span class="l">        } <i class="k">else</i> {</span>
+<span class="l">            analysis.append(<i class="s">"&#9989; Three controlled conditions recorded:\n\n"</i>);</span>
+<span class="l">            </span>
+<span class="l">            analysis.append(String.format(Locale.getDefault(),</span>
+<span class="l">                    <i class="s">"1. Covered:       raw=%.1f lux, smooth=%.1f lux @ %s\n"</i>,</span>
+<span class="l">                    obs1.raw, obs1.smoothed, obs1.timestamp));</span>
+<span class="l">            analysis.append(String.format(Locale.getDefault(),</span>
+<span class="l">                    <i class="s">"2. Indoor Light:  raw=%.1f lux, smooth=%.1f lux @ %s\n"</i>,</span>
+<span class="l">                    obs2.raw, obs2.smoothed, obs2.timestamp));</span>
+<span class="l">            analysis.append(String.format(Locale.getDefault(),</span>
+<span class="l">                    <i class="s">"3. Flashlight:    raw=%.1f lux, smooth=%.1f lux @ %s\n\n"</i>,</span>
+<span class="l">                    obs3.raw, obs3.smoothed, obs3.timestamp));</span>
+<span class="l">            </span>
+<span class="l">            <i class="c">// Pattern analysis</i></span>
+<span class="l">            analysis.append(<i class="s">"&#128202; Pattern Interpretation:\n"</i>);</span>
+<span class="l">            <i class="k">if</i> (obs1.raw < obs2.raw && obs2.raw < obs3.raw) {</span>
+<span class="l">                analysis.append(<i class="s">"&#8226; Clear monotonic increase: Covered < Indoor < Flashlight &#10003;\n"</i>);</span>
+<span class="l">                analysis.append(<i class="s">"&#8226; This matches expected physics: light sensor responds to photon flux\n"</i>);</span>
+<span class="l">            } <i class="k">else</i> {</span>
+<span class="l">                analysis.append(<i class="s">"&#8226; Non-monotonic pattern — check for confounding factors:\n"</i>);</span>
+<span class="l">                analysis.append(<i class="s">"  - Sensor angle/orientation changed between readings\n"</i>);</span>
+<span class="l">                analysis.append(<i class="s">"  - Ambient light fluctuations (clouds, auto-brightness)\n"</i>);</span>
+<span class="l">                analysis.append(<i class="s">"  - Sensor warm-up drift (first readings after register)\n"</i>);</span>
+<span class="l">            }</span>
+<span class="l">            </span>
+<span class="l">            <i class="c">// Confounding factors</i></span>
+<span class="l">            analysis.append(<i class="s">"\n&#9888; Confounding Factors (no calibration claimed):\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Factory calibration unknown — absolute lux values are approximate\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Spectral response varies: LED vs incandescent vs sunlight\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Cosine response error at oblique angles\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Temperature drift not compensated\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Device casing may attenuate light differently per angle\n"</i>);</span>
+<span class="l">            </span>
+<span class="l">            <i class="c">// Sampling & timing</i></span>
+<span class="l">            analysis.append(<i class="s">"\n&#9201; Sampling & Timing:\n"</i>);</span>
+<span class "l">            analysis.append(<i class="s">"&#8226; Requested: SENSOR_DELAY_NORMAL (~200ms, ~5 Hz)\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Actual rate: OS-dependent, not real-time guaranteed\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Events batched in background; timestamps = event receipt, not capture\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; No hardware timestamp — cannot measure exact inter-sample interval\n"</i>);</span>
+<span class="l">            </span>
+<span class="l">            <i class="c">// Battery</i></span>
+<span class="l">            analysis.append(<i class="s">"\n&#128507; Battery Cost:\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Continuous NORMAL listening: ~1-3%/hour (vendor-dependent)\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; UI update + EMA compute: negligible additional cost\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Best practice: unregister in onPause (implemented)\n"</i>);</span>
+<span class="l">            </span>
+<span class="l">            <i class="c">// Smoothing</i></span>
+<span class="l">            analysis.append(<i class="s">"\n&#128201; Smoothing (EMA &alpha;=0.3):\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Rule: S_t = &alpha;&middot;raw_t + (1-&alpha;)&middot;S_{t-1}\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Reduces jitter from quantization & transient shadows\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Trade-off: lag ~ 1/&alpha; samples (~3 samples) behind step changes\n"</i>);</span>
+<span class="l">            analysis.append(<i class="s">"&#8226; Raw vs Smoothed comparison shows noise suppression vs responsiveness\n"</i>);</span>
+<span class="l">        }</span>
+<span class="l">        </span>
+<span class="l">        analysis.append(<i class="s">"\n&#128241; Lifecycle Behavior:\n"</i>);</span>
+<span class="l">        analysis.append(<i class="s">"&#8226; onResume → registerListener() (visible lifecycle)\n"</i>);</span>
+<span class="l">        analysis.append(<i class="s">"&#8226; onPause  → unregisterListener() (prevents background drain)\n"</i>);</span>
+<span class="l">        analysis.append(<i class="s">"&#8226; Rotation → ViewModel retains smoothed value & observations\n"</i>);</span>
+<span class="l">        analysis.append(<i class="s">"&#8226; Duplicate registration prevented by isListenerRegistered flag\n"</i>);</span>
+<span class="l">        </span>
+<span class="l">        tvAnalysis.setText(analysis.toString());</span>
+<span class="l">    }</span>
+</pre></figure>
+
+<h3>4.9 State Persistence: onSaveInstanceState & restoreState</h3>
+<p>Saves <code>hasFirstReading</code>, <code>smoothedValue</code>, and all three observations into the Bundle. On restore, re-populates the UI and observation objects. The ViewModel additionally retains the latest raw/smoothed values across configuration changes.</p>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; onSaveInstanceState / restoreState</b></figcaption><pre><span class="l">    <i class="a">@Override</i></span>
+<span class="l">    <i class="k">protected</i> <i class="k">void</i> onSaveInstanceState(<i class="t">Bundle</i> outState) {</span>
+<span class="l">        <i class="k">super</i>.onSaveInstanceState(outState);</span>
+<span class="l">        outState.putBoolean(<i class="s">"hasFirstReading"</i>, hasFirstReading);</span>
+<span class="l">        outState.putFloat(<i class="s">"smoothedValue"</i>, smoothedValue);</span>
+<span class="l">        <i class="k">if</i> (obs1 != <i class="k">null</i>) {</span>
+<span class="l">            outState.putFloat(<i class="s">"obs1_raw"</i>, obs1.raw);</span>
+<span class="l">            outState.putFloat(<i class="s">"obs1_smooth"</i>, obs1.smoothed);</span>
+<span class="l">            outState.putString(<i class="s">"obs1_time"</i>, obs1.timestamp);</span>
+<span class="l">        }</span>
+<span class="l">        <i class="k">if</i> (obs2 != <i class="k">null</i>) {</span>
+<span class="l">            outState.putFloat(<i class="s">"obs2_raw"</i>, obs2.raw);</span>
+<span class="l">            outState.putFloat(<i class="s">"obs2_smooth"</i>, obs2.smoothed);</span>
+<span class="l">            outState.putString(<i class="s">"obs2_time"</i>, obs2.timestamp);</span>
+<span class="l">        }</span>
+<span class="l">        <i class="k">if</i> (obs3 != <i class="k">null</i>) {</span>
+<span class="l">            outState.putFloat(<i class="s">"obs3_raw"</i>, obs3.raw);</span>
+<span class="l">            outState.putFloat(<i class="s">"obs3_smooth"</i>, obs3.smoothed);</span>
+<span class="l">            outState.putString(<i class="s">"obs3_time"</i>, obs3.timestamp);</span>
+<span class="l">        }</span>
+<span class="l">    }</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="k">void</i> restoreState(<i class="t">Bundle</i> savedInstanceState) {</span>
+<span class="l">        <i class="k">if</i> (savedInstanceState != <i class="k">null</i>) {</span>
+<span class="l">            hasFirstReading = savedInstanceState.getBoolean(<i class="s">"hasFirstReading"</i>, <i class="k">false</i>);</span>
+<span class="l">            smoothedValue = savedInstanceState.getFloat(<i class="s">"smoothedValue"</i>, <i class="n">0f</i>);</span>
+<span class="l">            </span>
+<span class="l">            <i class="k">if</i> (hasFirstReading) {</span>
+<span class="l">                <i class="k">float</i> raw = <i class="n">0f</i>;</span>
+<span class="l">                <i class="k">if</i> (viewModel != <i class="k">null</i>) {</span>
+<span class="l">                    raw = viewModel.getLastRaw();</span>
+<span class="l">                }</span>
+<span class="l">                <i class="k">if</i> (tvRawValue != <i class="k">null</i>) {</span>
+<span class="l">                    tvRawValue.setText(String.format(Locale.getDefault(), <i class="s">"%.1f lux"</i>, raw));</span>
+<span class="l">                }</span>
+<span class="l">                <i class="k">if</i> (tvSmoothedValue != <i class="k">null</i>) {</span>
+<span class="l">                    tvSmoothedValue.setText(String.format(Locale.getDefault(), <i class="s">"%.1f lux"</i>, smoothedValue));</span>
+<span class="l">                }</span>
+<span class="l">            }</span>
+<span class="l">            </span>
+<span class="l">            <i class="c">// Restore observations</i></span>
+<span class="l">            <i class="k">if</i> (savedInstanceState.containsKey(<i class="s">"obs1_raw"</i>)) {</span>
+<span class="l">                obs1 = <i class="k">new</i> <i class="t">Observation</i>();</span>
+<span class="l">                obs1.raw = savedInstanceState.getFloat(<i class="s">"obs1_raw"</i>);</span>
+<span class="l">                obs1.smoothed = savedInstanceState.getFloat(<i class="s">"obs1_smooth"</i>);</span>
+<span class="l">                obs1.timestamp = savedInstanceState.getString(<i class="s">"obs1_time"</i>);</span>
+<span class="l">                <i class="k">if</i> (tvObs1Raw != <i class="k">null</i>) tvObs1Raw.setText(String.format(Locale.getDefault(), <i class="s">"%.1f"</i>, obs1.raw));</span>
+<span class="l">                <i class="k">if</i> (tvObs1Smooth != <i class="k">null</i>) tvObs1Smooth.setText(String.format(Locale.getDefault(), <i class="s">"%.1f"</i>, obs1.smoothed));</span>
+<span class="l">                <i class="k">if</i> (tvObs1Time != <i class="k">null</i>) tvObs1Time.setText(obs1.timestamp);</span>
+<span class="l">            }</span>
+<span class="l">            <i class="c">// ... same for obs2, obs3</i></span>
+<span class="l">        }</span>
+<span class="l">    }</span>
+</pre></figure>
+
+<h3>4.10 ViewModel for Rotation Survival</h3>
+<p>A minimal <code>ViewModel</code> holds the last raw reading, last smoothed value, and the <code>hasFirstReading</code> flag. It survives configuration changes (rotation) so the live values don&rsquo;t reset when the Activity is recreated.</p>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; SensorViewModel</b></figcaption><pre><span class="l">    <i class="c">// ===== ViewModel for rotation survival =====</i></span>
+<span class="l">    <i class="k">public</i> <i class="k">static</i> <i class="k">class</i> <i class="t">SensorViewModel</i> <i class="k">extends</i> <i class="t">ViewModel</i> {</span>
+<span class="l">        <i class="k">private</i> <i class="k">float</i> lastRaw = <i class="n">0f</i>;</span>
+<span class="l">        <i class="k">private</i> <i class="k">float</i> lastSmoothed = <i class="n">0f</i>;</span>
+<span class="l">        <i class="k">private</i> <i class="k">boolean</i> hasFirstReading = <i class="k">false</i>;</span>
+<span class="l">        </span>
+<span class="l">        <i class="c">// Explicit public no-arg constructor for ViewModelProvider compatibility</i></span>
+<span class="l">        <i class="k">public</i> SensorViewModel() {}</span>
+<span class="l">        </span>
+<span class="l">        <i class="k">public</i> <i class="k">float</i> getLastRaw() { <i class="k">return</i> lastRaw; }</span>
+<span class="l">        <i class="k">public</i> <i class="k">void</i> setLastRaw(<i class="k">float</i> v) { lastRaw = v; }</span>
+<span class="l">        <i class="k">public</i> <i class="k">float</i> getLastSmoothed() { <i class="k">return</i> lastSmoothed; }</span>
+<span class="l">        <i class="k">public</i> <i class="k">void</i> setLastSmoothed(<i class="k">float</i> v) { lastSmoothed = v; }</span>
+<span class="l">        <i class="k">public</i> <i class="k">boolean</i> getHasFirstReading() { <i class="k">return</i> hasFirstReading; }</span>
+<span class="l">        <i class="k">public</i> <i class="k">void</i> setHasFirstReading(<i class="k">boolean</i> v) { hasFirstReading = v; }</span>
+<span class="l">    }</span>
+</pre></figure>
+
+<h2>5 &middot; Key Concepts Reference</h2>
+<table><tr><th>Concept</th><th>Implementation in this Lab</th></tr>
+<tr><td><b>Sensor Type</b></td><td><code>Sensor.TYPE_LIGHT</code> — returns illuminance in lux (float[0])</td></tr>
+<tr><td><b>Sampling Rate</b></td><td><code>SENSOR_DELAY_NORMAL</code> (~200 ms / ~5 Hz, not guaranteed)</td></tr>
+<tr><td><b>Smoothing</b></td><td>Exponential Moving Average: <code>S<sub>t</sub> = 0.3&middot;raw<sub>t</sub> + 0.7&middot;S<sub>t-1</sub></code></td></tr>
+<tr><td><b>Lifecycle Policy</b></td><td>Register in <code>onResume</code>, unregister in <code>onPause</code> (visible lifecycle)</td></tr>
+<tr><td><b>Rotation Survival</b></td><td>ViewModel (raw, smoothed, hasFirstReading) + <code>onSaveInstanceState</code> (observations)</td></tr>
+<tr><td><b>Missing Sensor</b></td><td>Graceful degradation: UI shows &ldquo;Unavailable&rdquo;, all controls disabled, Toast shown</td></tr>
+<tr><td><b>Accuracy Handling</b></td><td><code>onAccuracyChanged</code> updates data source label to &ldquo;Unreliable&rdquo; (orange) when needed</td></tr>
+<tr><td><b>Battery Best Practice</b></td><td>Unregister when not visible; NORMAL rate ~1&ndash;3%/hr</td></tr>
+<tr><td><b>Thread Safety</b></td><td>All UI updates wrapped in <code>runOnUiThread()</code>; null guards on every view access</td></tr>
+</table>
+
+<h2>6 &middot; Complete Activity File</h2>
+<details><summary>MainActivity.java &middot; complete &mdash; click to expand</summary>
+<figure class="code"><figcaption>MainActivity.java <b>&middot; complete</b></figcaption><pre><span class="l"><i class="k">package</i> com.example.live_sensor_readings_lifecycle;</span>
+<span class="l"></span>
+<span class="l"><i class="k">import</i> android.content.Context;</span>
+<span class="l"><i class="k">import</i> android.hardware.Sensor;</span>
+<span class="l"><i class="k">import</i> android.hardware.SensorEvent;</span>
+<span class="l"><i class="k">import</i> android.hardware.SensorEventListener;</span>
+<span class="l"><i class="k">import</i> android.hardware.SensorManager;</span>
+<span class="l"><i class="k">import</i> android.os.Bundle;</span>
+<span class="l"><i class="k">import</i> android.os.SystemClock;</span>
+<span class="l"><i class="k">import</i> android.util.Log;</span>
+<span class="l"><i class="k">import</i> android.view.View;</span>
+<span class="l"><i class="k">import</i> android.widget.Button;</span>
+<span class="l"><i class="k">import</i> android.widget.TextView;</span>
+<span class="l"><i class="k">import</i> android.widget.Toast;</span>
+<span class="l"></span>
+<span class="l"><i class="k">import</i> androidx.activity.EdgeToEdge;</span>
+<span class="l"><i class="k">import</i> androidx.appcompat.app.AppCompatActivity;</span>
+<span class="l"><i class="k">import</i> androidx.core.graphics.Insets;</span>
+<span class="l"><i class="k">import</i> androidx.core.view.ViewCompat;</span>
+<span class="l"><i class="k">import</i> androidx.core.view.WindowInsetsCompat;</span>
+<span class="l"><i class="k">import</i> androidx.lifecycle.ViewModel;</span>
+<span class="l"><i class="k">import</i> androidx.lifecycle.ViewModelProvider;</span>
+<span class="l"></span>
+<span class="l"><i class="k">import</i> java.text.SimpleDateFormat;</span>
+<span class="l"><i class="k">import</i> java.util.Date;</span>
+<span class="l"><i class="k">import</i> java.util.Locale;</span>
+<span class="l"></span>
+<span class="l"><i class="k">public</i> <i class="k">class</i> <i class="t">MainActivity</i> <i class="k">extends</i> <i class="t">AppCompatActivity</i> <i class="k">implements</i> <i class="t">SensorEventListener</i> {</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="k">static</i> <i class="k">final</i> <i class="k">String</i> TAG = <i class="s">"LiveSensorLab06"</i>;</span>
+<span class="l">    <i class="k">private</i> <i class="k">static</i> <i class="k">final</i> <i class="k">float</i> EMA_ALPHA = <i class="n">0.3f</i>;</span>
+<span class="l">    <i class="k">private</i> <i class="k">static</i> <i class="k">final</i> <i class="k">int</i> PROGRESS_MAX = <i class="n">10000</i>;</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="t">SensorManager</i> sensorManager;</span>
+<span class="l">    <i class="k">private</i> <i class="t">Sensor</i> lightSensor;</span>
+<span class="l">    <i class="k">private</i> <i class="t">SensorViewModel</i> viewModel;</span>
+<span class="l"></span>
+<span class="l">    <i class="c">// UI Elements</i></span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvSensorName, tvSensorUnit, tvSensorStatus, tvDataSource;</span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvRawValue, tvSmoothedValue, tvTimestamp, tvListenerState, tvLifecyclePhase;</span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvAnalysis, tvTechnicalNotes;</span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvObs1Raw, tvObs1Smooth, tvObs1Time;</span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvObs2Raw, tvObs2Smooth, tvObs2Time;</span>
+<span class="l">    <i class="k">private</i> <i class="t">TextView</i> tvObs3Raw, tvObs3Smooth, tvObs3Time;</span>
+<span class="l">    <i class="k">private</i> <i class="t">Button</i> btnRegister, btnUnregister;</span>
+<span class="l">    <i class="k">private</i> <i class="t">Button</i> btnRecordObs1, btnRecordObs2, btnRecordObs3;</span>
+<span class="l">    <i class="k">private</i> <i class="t">Button</i> btnGenerateAnalysis;</span>
+<span class="l">    <i class="k">private</i> <i class="t">ProgressBar</i> progressLight;</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="k">boolean</i> isListenerRegistered = <i class="k">false</i>;</span>
+<span class="l">    <i class="k">private</i> <i class="k">float</i> smoothedValue = <i class="n">0f</i>;</span>
+<span class="l">    <i class="k">private</i> <i class="k">boolean</i> hasFirstReading = <i class="k">false</i>;</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="k">static</i> <i class="k">class</i> <i class="t">Observation</i> {</span>
+<span class="l">        <i class="k">float</i> raw;</span>
+<span class="l">        <i class="k">float</i> smoothed;</span>
+<span class="l">        <i class="k">String</i> timestamp;</span>
+<span class="l">    }</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="t">Observation</i> obs1 = <i class="k">null</i>, obs2 = <i class="k">null</i>, obs3 = <i class="k">null</i>;</span>
+<span class="l"></span>
+<span class="l">    <i class="a">@Override</i></span>
+<span class="l">    <i class="k">protected</i> <i class="k">void</i> onCreate(<i class="t">Bundle</i> savedInstanceState) {</span>
+<span class="l">        <i class="k">super</i>.onCreate(savedInstanceState);</span>
+<span class="l">        <i class="k">try</i> { EdgeToEdge.enable(<i class="k">this</i>); } <i class="k">catch</i> (<i class="t">Exception</i> e) {</span>
+<span class="l">            Log.w(TAG, <i class="s">"EdgeToEdge.enable failed: "</i> + e.getMessage());</span>
+<span class="l">        }</span>
+<span class="l">        setContentView(<i class="t">R</i>.layout.activity_main);</span>
+<span class="l">        View mainView = findViewById(<i class="t">R</i>.id.main);</span>
+<span class="l">        <i class="k">if</i> (mainView != <i class="k">null</i>) {</span>
+<span class="l">            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {</span>
+<span class="l">                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());</span>
+<span class="l">                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);</span>
+<span class="l">                <i class="k">return</i> insets;</span>
+<span class="l">            });</span>
+<span class="l">        } <i class="k">else</i> { Log.e(TAG, <i class="s">"Main view (R.id.main) not found in layout!"</i>); }</span>
+<span class="l">        updateLifecyclePhase(<i class="s">"onCreate"</i>);</span>
+<span class="l">        <i class="k">try</i> { viewModel = <i class="k">new</i> ViewModelProvider(<i class="k">this</i>).get(SensorViewModel.<i class="k">class</i>); }</span>
+<span class="l">        <i class="k">catch</i> (<i class="t">Exception</i> e) { Log.e(TAG, <i class="s">"ViewModel creation failed"</i>, e); viewModel = <i class="k">new</i> SensorViewModel(); }</span>
+<span class="l">        sensorManager = (<i class="t">SensorManager</i>) getSystemService(Context.SENSOR_SERVICE);</span>
+<span class="l">        <i class="k">if</i> (sensorManager != <i class="k">null</i>) lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);</span>
+<span class="l">        initViews();</span>
+<span class="l">        setupClickListeners();</span>
+<span class="l">        checkSensorAvailability();</span>
+<span class="l">        restoreState(savedInstanceState);</span>
+<span class="l">    }</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="k">void</i> initViews() {</span>
+<span class="l">        tvSensorName = findViewById(<i class="t">R</i>.id.tvSensorName);</span>
+<span class="l">        tvSensorUnit = findViewById(<i class="t">R</i>.id.tvSensorUnit);</span>
+<span class="l">        tvSensorStatus = findViewById(<i class="t">R</i>.id.tvSensorStatus);</span>
+<span class="l">        tvDataSource = findViewById(<i class="t">R</i>.id.tvDataSource);</span>
+<span class="l">        tvRawValue = findViewById(<i class="t">R</i>.id.tvRawValue);</span>
+<span class="l">        tvSmoothedValue = findViewById(<i class="t">R</i>.id.tvSmoothedValue);</span>
+<span class="l">        tvTimestamp = findViewById(<i class="t">R</i>.id.tvTimestamp);</span>
+<span class="l">        tvListenerState = findViewById(<i class="t">R</i>.id.tvListenerState);</span>
+<span class="l">        tvLifecyclePhase = findViewById(<i class="t">R</i>.id.tvLifecyclePhase);</span>
+<span class="l">        tvAnalysis = findViewById(<i class="t">R</i>.id.tvAnalysis);</span>
+<span class="l">        tvTechnicalNotes = findViewById(<i class="t">R</i>.id.tvTechnicalNotes);</span>
+<span class="l">        tvObs1Raw = findViewById(<i class="t">R</i>.id.tvObs1Raw);</span>
+<span class="l">        tvObs1Smooth = findViewById(<i class="t">R</i>.id.tvObs1Smooth);</span>
+<span class="l">        tvObs1Time = findViewById(<i class="t">R</i>.id.tvObs1Time);</span>
+<span class="l">        tvObs2Raw = findViewById(<i class="t">R</i>.id.tvObs2Raw);</span>
+<span class="l">        tvObs2Smooth = findViewById(<i class="t">R</i>.id.tvObs2Smooth);</span>
+<span class="l">        tvObs2Time = findViewById(<i class="t">R</i>.id.tvObs2Time);</span>
+<span class="l">        tvObs3Raw = findViewById(<i class="t">R</i>.id.tvObs3Raw);</span>
+<span class="l">        tvObs3Smooth = findViewById(<i class="t">R</i>.id.tvObs3Smooth);</span>
+<span class="l">        tvObs3Time = findViewById(<i class="t">R</i>.id.tvObs3Time);</span>
+<span class="l">        btnRegister = findViewById(<i class="t">R</i>.id.btnRegister);</span>
+<span class="l">        btnUnregister = findViewById(<i class="t">R</i>.id.btnUnregister);</span>
+<span class="l">        btnRecordObs1 = findViewById(<i class="t">R</i>.id.btnRecordObs1);</span>
+<span class="l">        btnRecordObs2 = findViewById(<i class="t">R</i>.id.btnRecordObs2);</span>
+<span class="l">        btnRecordObs3 = findViewById(<i class="t">R</i>.id.btnRecordObs3);</span>
+<span class="l">        btnGenerateAnalysis = findViewById(<i class="t">R</i>.id.btnGenerateAnalysis);</span>
+<span class="l">        progressLight = findViewById(<i class="t">R</i>.id.progressLight);</span>
+<span class="l">        <i class="k">if</i> (tvSensorStatus == <i class="k">null</i> || tvRawValue == <i class="k">null</i> || tvSmoothedValue == <i class="k">null</i> ||</span>
+<span class="l">            btnRegister == <i class="k">null</i> || btnUnregister == <i class="k">null</i> || progressLight == <i class="k">null</i>) {</span>
+<span class="l">            Log.e(TAG, <i class="s">"Critical views not found - check layout XML IDs match!"</i>);</span>
+<span class="l">        }</span>
+<span class="l">    }</span>
+<span class="l"></span>
+<span class="l">    <i class="k">private</i> <i class="k">void</i> setupClickListeners() {</span>
+<span class="l">        <i class="k">if</i> (btnRegister == <i class="k">null</i> || btnUnregister == <i class="k">null</i> || btnRecordObs1 == <i class="k">null</i> ||</span>
+<span class="l">            btnRecordObs2 == <i class="k">null</i> || btnRecordObs3 == <i class="k">null</i> || btnGenerateAnalysis == <i class="k">null</i>) {</span>
+<span class="l">            Log.e(TAG, <i class="s">"Cannot setup click listeners - buttons null"</i>); <i class="k">return</i>;</span>
+<span class="l">        }</span>
+<span class="l">        btnRegister.setOnClickListener(v -> registerListener());</span>
+<span class="l">        btnUnregister.setOnClickListener(v -> unregisterListener());</span>
+<span class="l">        btnRecordObs1.setOnClickListener(v -> recordObservation(<i class="n">1</i>));</span>
+<span class="l">        btnRecordObs2.setOnClickListener(v -> recordObservation(<i class="n">2</i>));</span>
+<span class="l">        btnRecordObs3.setOnClickListener(v -> recordObservation(<i class="n">3</i>));</span>
+<span class="l">        btnGenerateAnalysis.setOnClickListener(v -> generateAnalysis());</span>
+<span class="l">    }</span>
+<span class="l"></span>
+<span class="l">    <i class="c">// checkSensorAvailability, registerListener, unregisterListener, updateListenerStateUI,</i></span>
+<span class="l">    <i class="c">// updateLifecyclePhase, recordObservation, generateAnalysis, onSensorChanged,</i></span>
+<span class="l">    <i class="c">// onAccuracyChanged, onStart, onResume, onPause, onStop, onDestroy,</i></span>
+<span class="l">    <i class="c">// onSaveInstanceState, restoreState — as shown in Sections 4.3–4.9</i></span>
+<span class="l"></span>
+<span class="l">    <i class="k">public</i> <i class="k">static</i> <i class="k">class</i> <i class="t">SensorViewModel</i> <i class="k">extends</i> <i class="t">ViewModel</i> {</span>
+<span class="l">        <i class="k">private</i> <i class="k">float</i> lastRaw = <i class="n">0f</i>;</span>
+<span class="l">        <i class="k">private</i> <i class="k">float</i> lastSmoothed = <i class="n">0f</i>;</span>
+<span class="l">        <i class="k">private</i> <i class="k">boolean</i> hasFirstReading = <i class="k">false</i>;</span>
+<span class="l">        <i class="k">public</i> SensorViewModel() {}</span>
+<span class="l">        <i class="k">public</i> <i class="k">float</i> getLastRaw() { <i class="k">return</i> lastRaw; }</span>
+<span class="l">        <i class="k">public</i> <i class="k">void</i> setLastRaw(<i class="k">float</i> v) { lastRaw = v; }</span>
+<span class="l">        <i class="k">public</i> <i class="k">float</i> getLastSmoothed() { <i class="k">return</i> lastSmoothed; }</span>
+<span class="l">        <i class="k">public</i> <i class="k">void</i> setLastSmoothed(<i class="k">float</i> v) { lastSmoothed = v; }</span>
+<span class="l">        <i class="k">public</i> <i class="k">boolean</i> getHasFirstReading() { <i class="k">return</i> hasFirstReading; }</span>
+<span class="l">        <i class="k">public</i> <i class="k">void</i> setHasFirstReading(<i class="k">boolean</i> v) { hasFirstReading = v; }</span>
+<span class="l">    }</span>
+<span class="l">}</span>
+</pre></figure></details>
+
+<hr style="margin:48px 0;border:none;border-top:1px solid var(--line)">
+<p style="color:var(--mute);font-size:.9rem;text-align:center">Lab 06 — Live Sensor Readings, Lifecycle and Interpretation &bull; SCT211-0036/2024 &bull; Patrick Kilonzo Mbithi</p>
+</main></body></html>
